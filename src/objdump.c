@@ -36,11 +36,11 @@ int main(int argc, char **argv) {
   int fd;
   fd = open(fname, O_RDONLY);
 
- 	if (fd < 0) {
+  if (fd < 0) {
     fprintf(stderr, "error: fopen() failed opening ``%s``: %s\n",
             *argv, strerror(errno));
     return 1;
-	}
+  }
 
   // Get amount of bytes in the object code.
   int size;
@@ -49,7 +49,7 @@ int main(int argc, char **argv) {
   size = st.st_size;
 
   unsigned char *objcode =
-	  (unsigned char*)malloc(size*sizeof(unsigned char));
+    (unsigned char*)malloc(size*sizeof(unsigned char));
 
   ssize_t rd = read(fd, objcode, size);
   if (rd < 0) {
@@ -65,11 +65,11 @@ int main(int argc, char **argv) {
   }
 
   // struct bpf_insn linux/include/uapi/linux/bpf.h
-  __u8	opcode;		/* opcode */
-	__u8	dst_reg;	/* dest register */
-	__u8	src_reg;	/* source register */
-	__s16	off;		  /* signed offset */
-	__s32	imm;		  /* signed immediate constant */
+  __u8 opcode;  /* opcode */
+  __u8 dst_reg; /* dest register */
+  __u8 src_reg; /* source register */
+  __s16 off;    /* signed offset */
+  __s32 imm;    /* signed immediate constant */
 
   int addr = 0x00000;
   for (int i=7; i<size; i+=8) {
