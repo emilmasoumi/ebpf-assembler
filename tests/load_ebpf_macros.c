@@ -69,13 +69,13 @@ static int bpf_prog_load(enum bpf_prog_type prog_type,
 //}
 
 static int probe_filter_length(struct bpf_insn *fp) {
-	int len = 0;
+  int len = 0;
 
-	for (len = MAX_INSNS - 1; len > 0; --len)
-		if (fp[len].code != 0 || fp[len].imm != 0)
-			break;
+  for (len = MAX_INSNS - 1; len > 0; --len)
+    if (fp[len].code != 0 || fp[len].imm != 0)
+      break;
 
-	return len + 1;
+  return len + 1;
 }
 
 int main(void) {
