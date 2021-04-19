@@ -1,3 +1,2 @@
-var a 10
-dir:
-mov r0 dir
+var a 0x24
+mov r0 0x94

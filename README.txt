@@ -52,13 +52,11 @@ Example:
 ; comment
 mov r1 64
 mov32 r2 32
-jlt r2 r1 end
+jlt r2 r1 5
 jge r1 r2 6
-loop:
 sub r1 1
 add32 r2 1
-jle r1 r2 loop
-end:
+jle r1 r2 -2
 mov r0 0
 exit
 ```

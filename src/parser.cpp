@@ -6,7 +6,6 @@
 #include "parser.h"
 #include <algorithm>
 
-std::vector<struct dir>dnames;
 std::vector<struct var>vnames;
 
 #define parse_err(line, col, id, msg) \
@@ -67,27 +66,6 @@ static inline ident_t vname_val(ident_t id) {
   return " ";
 }
 
-static inline uint cnt_dname(ident_t dname) {
-  uint cnt = 0;
-  for (struct dir entry : dnames) {
-    if (entry.name == dname)
-      cnt++;
-  }
-  return cnt;
-}
-
-static inline void assign_dname_offs() {
-  uint off = 0;
-  Symbol sym;
-  for (uint i=0; i < symtab.size(); i++) {
-    sym = symtab[i].type;
-    if (sym == instr)
-     off++;
-    else if (sym == direc)
-      dnames[id_idx(symtab[i].id, dnames)].val = off+1;
-  }
-}
-
 void parse_newline(std::string& lexeme, uint& line, uint& col, bool& comment) {
   if (!lexeme.empty())
     parse_lexeme(lexeme, line, col);
@@ -104,15 +82,12 @@ void parse_directive(std::string& lexeme, uint line, uint col) {
 
   ident_t id = symtab.back().id;
 
+  parse_err(symtab.back().line, symtab.back().col, id,
+            "Directives are not supported");
+
   if (is_number(id) || is_hex(id) || is_decimal(id) || is_negative(id) ||
       is_instr(id)  || is_reg(id))
     parse_err(line, col, id, "directive: ``"+id+"`` cannot be a number or keyword");
-
-  dnames.push_back({symtab.back().id, 0});
-
-  if (cnt_dname(symtab.back().id) > 1)
-    parse_err(symtab.back().line, symtab.back().col, id, "multiple directive "
-              "definitions of ``"+id+"``");
 
   lexeme.clear();
 }
@@ -149,12 +124,6 @@ static inline void push_reg(Symbol sym, ident_t id, uint line, uint col) {
   absyn_tree.push_back({r, sym, id, line, col});
 }
 
-static inline void push_dir(uint idx, uint line, uint col) {
-  struct imm_int i;
-  i.val = dnames[id_idx(symtab[idx].id, dnames)].val;
-  absyn_tree.push_back({i, imm, std::to_string(i.val), line, col});
-}
-
 static inline void push_var(uint& idx, ident_t id, uint line, uint col) {
   if (idx+2 >= symtab.size())
     parse_err(line, col, id, "var expects at least two operands");
@@ -167,13 +136,8 @@ static inline void push_var(uint& idx, ident_t id, uint line, uint col) {
   ident_t vname = symtab[idx].id;
   idx++;
 
-  if (id_idx(vname, dnames) >= 0)
-    parse_err(line, col, vname, "``"+vname+"`` is both be a directive and variable");
-
   std::string v = symtab[idx].id;
-  if (id_idx(v, dnames) >= 0)
-    v = std::to_string(dnames[id_idx(v, dnames)].val);
-  else if (symtab[idx].type != imm)
+  if (symtab[idx].type != imm)
     v = vname_val(v);
 
   int vname_index = id_idx(vname, vnames);
@@ -207,8 +171,6 @@ static inline void push_imm(uint &idx, uint line, uint col) {
 static inline void push_id(uint& idx, ident_t id, uint line, uint col) {
   if (id_idx(id, vnames) >= 0)
     push_imm(idx, line, col);
-  else if (id_idx(id, dnames) >= 0)
-    push_dir(idx, line, col);
   else
     parse_err(line, col, id, "undefined identifier: ``"+id+"``");
 }
@@ -217,8 +179,6 @@ static inline void push_id(uint& idx, ident_t id, uint line, uint col) {
   Parses the symbol table to an abstract syntax tree.
 */
 void parser(void) {
-
-  assign_dname_offs();
 
   if (num_instr() < 1)
     error("1:1: parse error: expected at least one instruction");

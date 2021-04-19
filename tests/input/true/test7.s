@@ -68,36 +68,36 @@ be64 r0
 
 ;;;; Atomic operations:
 
-addx16     r0 r1 done
-addx32     r0 r1 done
-addx64     r0 r1 done
-andx16     r0 r1 done
-andx32     r0 r1 done
-andx64     r0 r1 done
-orx16      r0 r1 done
-orx32      r0 r1 done
-orx64      r0 r1 done
-xorx16     r0 r1 done
-xorx32     r0 r1 done
-xorx64     r0 r1 done
-addfx16    r0 r1 done
-addfx32    r0 r1 done
-addfx64    r0 r1 done
-andfx16    r0 r1 done
-andfx32    r0 r1 done
-andfx64    r0 r1 done
-orfx16     r0 r1 done
-orfx32     r0 r1 done
-orfx64     r0 r1 done
-xorfx16    r0 r1 done
-xorfx32    r0 r1 done
-xorfx64    r0 r1 done
-xchgx16    r0 r1 done
-xchgx32    r0 r1 done
-xchgx64    r0 r1 done
-cmpxchgx16 r0 r1 done
-cmpxchgx32 r0 r1 done
-cmpxchgx64 r0 r1 done
+addx16     r0 r1 8
+addx32     r0 r1 8
+addx64     r0 r1 8
+andx16     r0 r1 8
+andx32     r0 r1 8
+andx64     r0 r1 8
+orx16      r0 r1 8
+orx32      r0 r1 8
+orx64      r0 r1 8
+xorx16     r0 r1 8
+xorx32     r0 r1 8
+xorx64     r0 r1 8
+addfx16    r0 r1 8
+addfx32    r0 r1 8
+addfx64    r0 r1 8
+andfx16    r0 r1 8
+andfx32    r0 r1 8
+andfx64    r0 r1 8
+orfx16     r0 r1 8
+orfx32     r0 r1 8
+orfx64     r0 r1 8
+xorfx16    r0 r1 8
+xorfx32    r0 r1 8
+xorfx64    r0 r1 8
+xchgx16    r0 r1 8
+xchgx32    r0 r1 8
+xchgx64    r0 r1 8
+cmpxchgx16 r0 r1 8
+cmpxchgx32 r0 r1 8
+cmpxchgx64 r0 r1 8
 
 ;;;; Memory instructions:
 
@@ -111,78 +111,77 @@ ldind8  r1 128
 ldind16 r1 128
 ldind32 r1 128
 ldind64 r1 128
-ldx8    r0 r1 done
-ldx16   r0 r1 done
-ldx32   r0 r1 done
-ldx64   r0 r1 done
-st8     r0 done 128
-st16    r0 done 128
-st32    r0 done 128
-st64    r0 done 128
-stx8    r0 r1 done
-stx16   r0 r1 done
-stx32   r0 r1 done
-stx64   r0 r1 done
-stxx8   r0 r1 done
-stxx16  r0 r1 done
-stxx32  r0 r1 done
-stxx64  r0 r1 done
+ldx8    r0 r1 8
+ldx16   r0 r1 8
+ldx32   r0 r1 8
+ldx64   r0 r1 8
+st8     r0 8 128
+st16    r0 8 128
+st32    r0 8 128
+st64    r0 8 128
+stx8    r0 r1 8
+stx16   r0 r1 8
+stx32   r0 r1 8
+stx64   r0 r1 8
+stxx8   r0 r1 8
+stxx16  r0 r1 8
+stxx32  r0 r1 8
+stxx64  r0 r1 8
 
 ;;;; Branch instructions:
 ; 64-bit:
-ja   done
-jeq  r0 128 done
-jeq  r0 r1 done
-jgt  r0 128 done
-jgt  r0 r1 done
-jge  r0 128 done
-jge  r0 r1 done
-jlt  r0 128 done
-jlt  r0 r1 done
-jle  r0 128 done
-jle  r0 r1 done
-jset r0 128 done
-jset r0 r1 done
-jne  r0 128 done
-jne  r0 r1 done
-jsgt r0 128 done
-jsgt r0 r1 done
-jsge r0 128 done
-jsge r0 r1 done
-jslt r0 128 done
-jslt r0 r1 done
-jsle r0 128 done
-jsle r0 r1 done
+ja   8
+jeq  r0 128 8
+jeq  r0 r1 8
+jgt  r0 128 8
+jgt  r0 r1 8
+jge  r0 128 8
+jge  r0 r1 8
+jlt  r0 128 8
+jlt  r0 r1 8
+jle  r0 128 8
+jle  r0 r1 8
+jset r0 128 8
+jset r0 r1 8
+jne  r0 128 8
+jne  r0 r1 8
+jsgt r0 128 8
+jsgt r0 r1 8
+jsge r0 128 8
+jsge r0 r1 8
+jslt r0 128 8
+jslt r0 r1 8
+jsle r0 128 8
+jsle r0 r1 8
 ;call 44
 rel  44
 
 ; 32-bit:
-jeq32  r0 128 done
-jeq32  r0 r1 done
-jgt32  r0 128 done
-jgt32  r0 r1 done
-jge32  r0 128 done
-jge32  r0 r1 done
-jlt32  r0 128 done
-jlt32  r0 r1 done
-jle32  r0 128 done
-jle32  r0 r1 done
-jset32 r0 128 done
-jset32 r0 r1 done
-jne32  r0 128 done
-jne32  r0 r1 done
-jsgt32 r0 128 done
-jsgt32 r0 r1 done
-jsge32 r0 128 done
-jsge32 r0 r1 done
-jslt32 r0 128 done
-jslt32 r0 r1 done
-jsle32 r0 128 done
-jsle32 r0 r1 done
+jeq32  r0 128 8
+jeq32  r0 r1 8
+jgt32  r0 128 8
+jgt32  r0 r1 8
+jge32  r0 128 8
+jge32  r0 r1 8
+jlt32  r0 128 8
+jlt32  r0 r1 8
+jle32  r0 128 8
+jle32  r0 r1 8
+jset32 r0 128 8
+jset32 r0 r1 8
+jne32  r0 128 8
+jne32  r0 r1 8
+jsgt32 r0 128 8
+jsgt32 r0 r1 8
+jsge32 r0 128 8
+jsge32 r0 r1 8
+jslt32 r0 128 8
+jslt32 r0 r1 8
+jsle32 r0 128 8
+jsle32 r0 r1 8
 
 ;;;; Special instructions:
 zext r0
 
-done:
 ;;;; Branch instruction exit:
 exit

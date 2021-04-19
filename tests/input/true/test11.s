@@ -1,5 +1,4 @@
 mov r0 3
-lab:
 var a 44
 mov r5 a
 var b 3
