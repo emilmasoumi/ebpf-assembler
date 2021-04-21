@@ -6,8 +6,6 @@
 #include "parser.h"
 #include <algorithm>
 
-std::vector<struct var>vnames;
-
 #define parse_err(line, col, id, msg) \
   (error(line, ":", col, ": parse error: ", msg, err_getline(id, line, col)))
 
@@ -56,14 +54,6 @@ static inline int id_idx(ident_t vname, std::vector<T>vec) {
     if (vec[i].name == vname)
       return i;
   return -1;
-}
-
-static inline ident_t vname_val(ident_t id) {
-  for (struct var vname : vnames)
-    if (vname.name == id)
-      return vname.val;
-  error("error: ", id, " is undefined");
-  return " ";
 }
 
 void parse_newline(std::string& lexeme, uint& line, uint& col, bool& comment) {
@@ -119,55 +109,24 @@ static inline void push_reg(Type ty, ident_t id, uint line, uint col) {
   absyn_tree.push_back({regs, ty, id, 0, line, col});
 }
 
-static inline void push_var(uint& idx, ident_t id, uint line, uint col) {
-  if (idx+2 >= symtab.size())
-    parse_err(line, col, id, "var expects at least two operands");
-  else if (symtab[idx+1].type != ident)
-    parse_err(line, col, id, "first operand of `var` must be an identifier");
-  else if (symtab[idx+2].type != imm && symtab[idx+2].type != ident)
-    parse_err(line, col, id, "second operand of `var` must be an immediate or variable");
-
-  idx++;
-  ident_t vname = symtab[idx].id;
-  idx++;
-
-  std::string v = symtab[idx].id;
-  if (symtab[idx].type != imm)
-    v = vname_val(v);
-
-  int vname_index = id_idx(vname, vnames);
-  if (vname_index < 0)
-    vnames.push_back({vname, v});
-  else
-    vnames[vname_index].val = v;
-}
-
 static inline void push_imm(uint &idx, uint line, uint col) {
-  Type type = symtab[idx].type;
-  ident_t id  = symtab[idx].id;
+  Type type  = symtab[idx].type;
+  ident_t id = symtab[idx].id;
   int i;
 
-  if (type == ident)
-    if (is_hex(vname_val(id)))
-      i = std::stoi(vname_val(id), 0, 16);
-    else
-      i = std::stoi(vname_val(id));
-  else if (type == imm)
-    if (is_hex(id))
-      i = std::stoi(id, 0, 16);
-    else
-      i = std::stoi(id);
-  else
+  if (type != imm)
     parse_err(line, col, id, "not an immediate");
+
+  if (is_hex(id))
+    i = std::stoi(id, 0, 16);
+  else
+    i = std::stoi(id);
 
   absyn_tree.push_back({imm_int, imm, std::to_string(i), 0, line, col});
 }
 
-static inline void push_id(uint& idx, ident_t id, uint line, uint col) {
-  if (id_idx(id, vnames) >= 0)
-    push_imm(idx, line, col);
-  else
-    parse_err(line, col, id, "undefined identifier: ``"+id+"``");
+static inline void push_id(ident_t id, uint line, uint col) {
+  parse_err(line, col, id, "undefined identifier: ``"+id+"``");
 }
 
 /*
@@ -312,9 +271,6 @@ void parser(void) {
       else if (id == "jsle32")     push_instr(jsle32, offset, ty, id, line, col);
       else if (id == "zext")       push_instr(zext, offset, ty, id, line, col);
     }
-    /* Variables */
-    else if (id == "var")
-      push_var(i, id, line, col);
     /* Registers */
     else if (ty == reg)
       push_reg(ty, id, line, col);
@@ -326,7 +282,7 @@ void parser(void) {
       ;
     /* Identifiers */
     else if (ty == ident)
-      push_id(i, id, line, col);
+      push_id(id, line, col);
     else
       parse_err(line, col, id, "unexpected symbol ``"+id+"``");
   }

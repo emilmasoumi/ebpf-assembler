@@ -1,10 +1,6 @@
-var a 10
-mov r0 a
-mov r0 a
-var b -10
-mov r1 b
-var c a
-mov r8 c
-var c 2
-mov r9 c
+mov r0 0x0
+mov r0 0x0
+mov r1 0x0
+mov r8 0x0
+mov r9 0x0
 ;c

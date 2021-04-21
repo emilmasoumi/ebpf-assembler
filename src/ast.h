@@ -438,12 +438,6 @@ uint get_ops(Node);
 uint get_off(Node);
 void pp_ast(void);
 
-/* Variables */
-struct var {
-  std::string name;
-  std::string val;
-};
-
 /* Directives */
 struct dir {
   std::string name;
