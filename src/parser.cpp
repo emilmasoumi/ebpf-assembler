@@ -110,18 +110,13 @@ void parse_lexeme(std::string& lexeme, uint line, uint col) {
   lexeme.clear();
 }
 
-template <typename T>
-static inline void push_instr(uint& offset, Symbol sym, ident_t id,
+static inline void push_instr(Node node, uint& offset, Type ty, ident_t id,
                               uint line, uint col) {
-  T ins;
-  ins.off = ++offset;
-  absyn_tree.push_back({ins, sym, id, line, col});
+  absyn_tree.push_back({node, ty, id, offset, line, col});
 }
 
-static inline void push_reg(Symbol sym, ident_t id, uint line, uint col) {
-  struct regs r;
-  r.reg = det_reg_val(id);
-  absyn_tree.push_back({r, sym, id, line, col});
+static inline void push_reg(Type ty, ident_t id, uint line, uint col) {
+  absyn_tree.push_back({regs, ty, id, 0, line, col});
 }
 
 static inline void push_var(uint& idx, ident_t id, uint line, uint col) {
@@ -148,24 +143,24 @@ static inline void push_var(uint& idx, ident_t id, uint line, uint col) {
 }
 
 static inline void push_imm(uint &idx, uint line, uint col) {
-  Symbol type = symtab[idx].type;
+  Type type = symtab[idx].type;
   ident_t id  = symtab[idx].id;
-  struct imm_int i;
+  int i;
 
   if (type == ident)
     if (is_hex(vname_val(id)))
-      i.val = std::stoi(vname_val(id), 0, 16);
+      i = std::stoi(vname_val(id), 0, 16);
     else
-      i.val = std::stoi(vname_val(id));
+      i = std::stoi(vname_val(id));
   else if (type == imm)
     if (is_hex(id))
-      i.val = std::stoi(id, 0, 16);
+      i = std::stoi(id, 0, 16);
     else
-      i.val = std::stoi(id);
+      i = std::stoi(id);
   else
     parse_err(line, col, id, "not an immediate");
 
-  absyn_tree.push_back({i, imm, std::to_string(i.val), line, col});
+  absyn_tree.push_back({imm_int, imm, std::to_string(i), 0, line, col});
 }
 
 static inline void push_id(uint& idx, ident_t id, uint line, uint col) {
@@ -187,7 +182,7 @@ void parser(void) {
   offset = 0;
 
   struct symtab_t entry;
-  Symbol sym;
+  Type ty;
   ident_t id;
   uint line, col;
 
@@ -195,259 +190,142 @@ void parser(void) {
 
     entry = symtab[i];
     id    = entry.id;
-    sym   = entry.type;
+    ty    = entry.type;
     line  = entry.line;
     col   = entry.col;
 
     /* Instructions */
-    if (sym == instr) {
-      if (id == "add")
-        push_instr<struct add>(offset, sym, id, line, col);
-      else if (id == "sub")
-        push_instr<struct sub>(offset, sym, id, line, col);
-      else if (id == "mul")
-        push_instr<struct mul>(offset, sym, id, line, col);
-      else if (id == "div")
-        push_instr<struct div_ins>(offset, sym, id, line, col);
-      else if (id == "or")
-        push_instr<struct or_ins>(offset, sym, id, line, col);
-      else if (id == "and")
-        push_instr<struct and_ins>(offset, sym, id, line, col);
-      else if (id == "lsh")
-        push_instr<struct lsh>(offset, sym, id, line, col);
-      else if (id == "rsh")
-        push_instr<struct rsh>(offset, sym, id, line, col);
-      else if (id == "neg")
-        push_instr<struct neg>(offset, sym, id, line, col);
-      else if (id == "mod")
-        push_instr<struct mod>(offset, sym, id, line, col);
-      else if (id == "xor")
-        push_instr<struct xor_ins>(offset, sym, id, line, col);
-      else if (id == "mov")
-        push_instr<struct mov>(offset, sym, id, line, col);
-      else if (id == "arsh")
-        push_instr<struct arsh>(offset, sym, id, line, col);
-      else if (id == "add32")
-        push_instr<struct add32>(offset, sym, id, line, col);
-      else if (id == "sub32")
-        push_instr<struct sub32>(offset, sym, id, line, col);
-      else if (id == "mul32")
-        push_instr<struct mul32>(offset, sym, id, line, col);
-      else if (id == "div32")
-        push_instr<struct div32>(offset, sym, id, line, col);
-      else if (id == "or32")
-        push_instr<struct or32>(offset, sym, id, line, col);
-      else if (id == "and32")
-        push_instr<struct and32>(offset, sym, id, line, col);
-      else if (id == "lsh32")
-        push_instr<struct lsh32>(offset, sym, id, line, col);
-      else if (id == "rsh32")
-        push_instr<struct rsh32>(offset, sym, id, line, col);
-      else if (id == "rsh32")
-        push_instr<struct rsh32>(offset, sym, id, line, col);
-      else if (id == "neg32")
-        push_instr<struct neg32>(offset, sym, id, line, col);
-      else if (id == "mod32")
-        push_instr<struct mod32>(offset, sym, id, line, col);
-      else if (id == "xor32")
-        push_instr<struct xor32>(offset, sym, id, line, col);
-      else if (id == "mov32")
-        push_instr<struct mov32>(offset, sym, id, line, col);
-      else if (id == "arsh32")
-        push_instr<struct arsh32>(offset, sym, id, line, col);
-      else if (id == "le16")
-        push_instr<struct le16>(offset, sym, id, line, col);
-      else if (id == "le32")
-        push_instr<struct le32>(offset, sym, id, line, col);
-      else if (id == "le64")
-        push_instr<struct le64>(offset, sym, id, line, col);
-      else if (id == "be16")
-        push_instr<struct be16>(offset, sym, id, line, col);
-      else if (id == "be32")
-        push_instr<struct be32>(offset, sym, id, line, col);
-      else if (id == "be64")
-        push_instr<struct be64>(offset, sym, id, line, col);
-      else if (id == "addx16")
-        push_instr<struct addx16>(offset, sym, id, line, col);
-      else if (id == "addx32")
-        push_instr<struct addx32>(offset, sym, id, line, col);
-      else if (id == "addx64")
-        push_instr<struct addx64>(offset, sym, id, line, col);
-      else if (id == "andx16")
-        push_instr<struct andx16>(offset, sym, id, line, col);
-      else if (id == "andx32")
-        push_instr<struct andx32>(offset, sym, id, line, col);
-      else if (id == "andx64")
-        push_instr<struct andx64>(offset, sym, id, line, col);
-      else if (id == "orx16")
-        push_instr<struct orx16>(offset, sym, id, line, col);
-      else if (id == "orx32")
-        push_instr<struct orx32>(offset, sym, id, line, col);
-      else if (id == "orx64")
-        push_instr<struct orx64>(offset, sym, id, line, col);
-      else if (id == "xorx16")
-        push_instr<struct xorx16>(offset, sym, id, line, col);
-      else if (id == "xorx32")
-        push_instr<struct xorx32>(offset, sym, id, line, col);
-      else if (id == "xorx64")
-        push_instr<struct xorx64>(offset, sym, id, line, col);
-      else if (id == "addfx16")
-        push_instr<struct addfx16>(offset, sym, id, line, col);
-      else if (id == "addfx32")
-        push_instr<struct addfx32>(offset, sym, id, line, col);
-      else if (id == "addfx64")
-        push_instr<struct addfx64>(offset, sym, id, line, col);
-      else if (id == "andfx16")
-        push_instr<struct andfx16>(offset, sym, id, line, col);
-      else if (id == "andfx32")
-        push_instr<struct andfx32>(offset, sym, id, line, col);
-      else if (id == "andfx64")
-        push_instr<struct andfx64>(offset, sym, id, line, col);
-      else if (id == "orfx16")
-        push_instr<struct orfx16>(offset, sym, id, line, col);
-      else if (id == "orfx32")
-        push_instr<struct orfx32>(offset, sym, id, line, col);
-      else if (id == "orfx64")
-        push_instr<struct orfx64>(offset, sym, id, line, col);
-      else if (id == "xorfx16")
-        push_instr<struct xorfx16>(offset, sym, id, line, col);
-      else if (id == "xorfx32")
-        push_instr<struct xorfx32>(offset, sym, id, line, col);
-      else if (id == "xorfx64")
-        push_instr<struct xorfx64>(offset, sym, id, line, col);
-      else if (id == "xchgx16")
-        push_instr<struct xchgx16>(offset, sym, id, line, col);
-      else if (id == "xchgx32")
-        push_instr<struct xchgx32>(offset, sym, id, line, col);
-      else if (id == "xchgx64")
-        push_instr<struct xchgx64>(offset, sym, id, line, col);
-      else if (id == "cmpxchgx16")
-        push_instr<struct cmpxchgx16>(offset, sym, id, line, col);
-      else if (id == "cmpxchgx32")
-        push_instr<struct cmpxchgx32>(offset, sym, id, line, col);
-      else if (id == "cmpxchgx64")
-        push_instr<struct cmpxchgx64>(offset, sym, id, line, col);
-      else if (id == "ldmapfd")
-        push_instr<struct ldmapfd>(offset, sym, id, line, col);
-      else if (id == "ld64")
-        push_instr<struct ld64>(offset, sym, id, line, col);
-      else if (id == "ldabs8")
-        push_instr<struct ldabs8>(offset, sym, id, line, col);
-      else if (id == "ldabs16")
-        push_instr<struct ldabs16>(offset, sym, id, line, col);
-      else if (id == "ldabs32")
-        push_instr<struct ldabs32>(offset, sym, id, line, col);
-      else if (id == "ldabs64")
-        push_instr<struct ldabs64>(offset, sym, id, line, col);
-      else if (id == "ldind8")
-        push_instr<struct ldind8>(offset, sym, id, line, col);
-      else if (id == "ldind16")
-        push_instr<struct ldind16>(offset, sym, id, line, col);
-      else if (id == "ldind32")
-        push_instr<struct ldind32>(offset, sym, id, line, col);
-      else if (id == "ldind64")
-        push_instr<struct ldind64>(offset, sym, id, line, col);
-      else if (id == "ldx8")
-        push_instr<struct ldx8>(offset, sym, id, line, col);
-      else if (id == "ldx16")
-        push_instr<struct ldx16>(offset, sym, id, line, col);
-      else if (id == "ldx32")
-        push_instr<struct ldx32>(offset, sym, id, line, col);
-      else if (id == "ldx64")
-        push_instr<struct ldx64>(offset, sym, id, line, col);
-      else if (id == "st8")
-        push_instr<struct st8>(offset, sym, id, line, col);
-      else if (id == "st16")
-        push_instr<struct st16>(offset, sym, id, line, col);
-      else if (id == "st32")
-        push_instr<struct st32>(offset, sym, id, line, col);
-      else if (id == "st64")
-        push_instr<struct st64>(offset, sym, id, line, col);
-      else if (id == "stx8")
-        push_instr<struct stx8>(offset, sym, id, line, col);
-      else if (id == "stx16")
-        push_instr<struct stx16>(offset, sym, id, line, col);
-      else if (id == "stx32")
-        push_instr<struct stx32>(offset, sym, id, line, col);
-      else if (id == "stx64")
-        push_instr<struct stx64>(offset, sym, id, line, col);
-      else if (id == "stxx8")
-        push_instr<struct stxx8>(offset, sym, id, line, col);
-      else if (id == "stxx16")
-        push_instr<struct stxx16>(offset, sym, id, line, col);
-      else if (id == "stxx32")
-        push_instr<struct stxx32>(offset, sym, id, line, col);
-      else if (id == "stxx64")
-        push_instr<struct stxx64>(offset, sym, id, line, col);
-      else if (id == "ja")
-        push_instr<struct ja>(offset, sym, id, line, col);
-      else if (id == "jeq")
-        push_instr<struct jeq>(offset, sym, id, line, col);
-      else if (id == "jgt")
-        push_instr<struct jgt>(offset, sym, id, line, col);
-      else if (id == "jge")
-        push_instr<struct jge>(offset, sym, id, line, col);
-      else if (id == "jlt")
-        push_instr<struct jlt>(offset, sym, id, line, col);
-      else if (id == "jle")
-        push_instr<struct jle>(offset, sym, id, line, col);
-      else if (id == "jset")
-        push_instr<struct jset>(offset, sym, id, line, col);
-      else if (id == "jne")
-        push_instr<struct jne>(offset, sym, id, line, col);
-      else if (id == "jsgt")
-        push_instr<struct jsgt>(offset, sym, id, line, col);
-      else if (id == "jsge")
-        push_instr<struct jsge>(offset, sym, id, line, col);
-      else if (id == "jslt")
-        push_instr<struct jslt>(offset, sym, id, line, col);
-      else if (id == "jsle")
-        push_instr<struct jsle>(offset, sym, id, line, col);
-      else if (id == "call")
-        push_instr<struct call>(offset, sym, id, line, col);
-      else if (id == "rel")
-        push_instr<struct rel>(offset, sym, id, line, col);
-      else if (id == "exit")
-        push_instr<struct exit_ins>(offset, sym, id, line, col);
-      else if (id == "jeq32")
-        push_instr<struct jeq32>(offset, sym, id, line, col);
-      else if (id == "jgt32")
-        push_instr<struct jgt32>(offset, sym, id, line, col);
-      else if (id == "jge32")
-        push_instr<struct jge32>(offset, sym, id, line, col);
-      else if (id == "jlt32")
-        push_instr<struct jlt32>(offset, sym, id, line, col);
-      else if (id == "jle32")
-        push_instr<struct jle32>(offset, sym, id, line, col);
-      else if (id == "jset32")
-        push_instr<struct jset32>(offset, sym, id, line, col);
-      else if (id == "jne32")
-        push_instr<struct jne32>(offset, sym, id, line, col);
-      else if (id == "jsgt32")
-        push_instr<struct jsgt32>(offset, sym, id, line, col);
-      else if (id == "jsge32")
-        push_instr<struct jsge32>(offset, sym, id, line, col);
-      else if (id == "jslt32")
-        push_instr<struct jslt32>(offset, sym, id, line, col);
-      else if (id == "jsle32")
-        push_instr<struct jsle32>(offset, sym, id, line, col);
-      else if (id == "zext")
-        push_instr<struct zext>(offset, sym, id, line, col);
+    if (ty == instr) {
+      if (id == "add")             push_instr(add, offset, ty, id, line, col);
+      else if (id == "sub")        push_instr(sub, offset, ty, id, line, col);
+      else if (id == "mul")        push_instr(mul, offset, ty, id, line, col);
+      else if (id == "div")        push_instr(div_ins, offset, ty, id, line, col);
+      else if (id == "or")         push_instr(or_ins, offset, ty, id, line, col);
+      else if (id == "and")        push_instr(and_ins, offset, ty, id, line, col);
+      else if (id == "lsh")        push_instr(lsh, offset, ty, id, line, col);
+      else if (id == "rsh")        push_instr(rsh, offset, ty, id, line, col);
+      else if (id == "neg")        push_instr(neg, offset, ty, id, line, col);
+      else if (id == "mod")        push_instr(mod, offset, ty, id, line, col);
+      else if (id == "xor")        push_instr(xor_ins, offset, ty, id, line, col);
+      else if (id == "mov")        push_instr(mov, offset, ty, id, line, col);
+      else if (id == "arsh")       push_instr(arsh, offset, ty, id, line, col);
+      else if (id == "add32")      push_instr(add32, offset, ty, id, line, col);
+      else if (id == "sub32")      push_instr(sub32, offset, ty, id, line, col);
+      else if (id == "mul32")      push_instr(mul32, offset, ty, id, line, col);
+      else if (id == "div32")      push_instr(div32, offset, ty, id, line, col);
+      else if (id == "or32")       push_instr(or32, offset, ty, id, line, col);
+      else if (id == "and32")      push_instr(and32, offset, ty, id, line, col);
+      else if (id == "lsh32")      push_instr(lsh32, offset, ty, id, line, col);
+      else if (id == "rsh32")      push_instr(rsh32, offset, ty, id, line, col);
+      else if (id == "neg32")      push_instr(neg32, offset, ty, id, line, col);
+      else if (id == "mod32")      push_instr(mod32, offset, ty, id, line, col);
+      else if (id == "xor32")      push_instr(xor32, offset, ty, id, line, col);
+      else if (id == "mov32")      push_instr(mov32, offset, ty, id, line, col);
+      else if (id == "arsh32")     push_instr(arsh32, offset, ty, id, line, col);
+      else if (id == "le16")       push_instr(le16, offset, ty, id, line, col);
+      else if (id == "le32")       push_instr(le32, offset, ty, id, line, col);
+      else if (id == "le64")       push_instr(le64, offset, ty, id, line, col);
+      else if (id == "be16")       push_instr(be16, offset, ty, id, line, col);
+      else if (id == "be32")       push_instr(be32, offset, ty, id, line, col);
+      else if (id == "be64")       push_instr(be64, offset, ty, id, line, col);
+      else if (id == "addx16")     push_instr(addx16, offset, ty, id, line, col);
+      else if (id == "addx32")     push_instr(addx32, offset, ty, id, line, col);
+      else if (id == "addx64")     push_instr(addx64, offset, ty, id, line, col);
+      else if (id == "andx16")     push_instr(andx16, offset, ty, id, line, col);
+      else if (id == "andx32")     push_instr(andx32, offset, ty, id, line, col);
+      else if (id == "andx64")     push_instr(andx64, offset, ty, id, line, col);
+      else if (id == "orx16")      push_instr(orx16, offset, ty, id, line, col);
+      else if (id == "orx32")      push_instr(orx32, offset, ty, id, line, col);
+      else if (id == "orx64")      push_instr(orx64, offset, ty, id, line, col);
+      else if (id == "xorx16")     push_instr(xorx16, offset, ty, id, line, col);
+      else if (id == "xorx32")     push_instr(xorx32, offset, ty, id, line, col);
+      else if (id == "xorx64")     push_instr(xorx64, offset, ty, id, line, col);
+      else if (id == "addfx16")    push_instr(addfx16, offset, ty, id, line, col);
+      else if (id == "addfx32")    push_instr(addfx32, offset, ty, id, line, col);
+      else if (id == "addfx64")    push_instr(addfx64, offset, ty, id, line, col);
+      else if (id == "andfx16")    push_instr(andfx16, offset, ty, id, line, col);
+      else if (id == "andfx32")    push_instr(andfx32, offset, ty, id, line, col);
+      else if (id == "andfx64")    push_instr(andfx64, offset, ty, id, line, col);
+      else if (id == "orfx16")     push_instr(orfx16, offset, ty, id, line, col);
+      else if (id == "orfx32")     push_instr(orfx32, offset, ty, id, line, col);
+      else if (id == "orfx64")     push_instr(orfx64, offset, ty, id, line, col);
+      else if (id == "xorfx16")    push_instr(xorfx16, offset, ty, id, line, col);
+      else if (id == "xorfx32")    push_instr(xorfx32, offset, ty, id, line, col);
+      else if (id == "xorfx64")    push_instr(xorfx64, offset, ty, id, line, col);
+      else if (id == "xchgx16")    push_instr(xchgx16, offset, ty, id, line, col);
+      else if (id == "xchgx32")    push_instr(xchgx32, offset, ty, id, line, col);
+      else if (id == "xchgx64")    push_instr(xchgx64, offset, ty, id, line, col);
+      else if (id == "cmpxchgx16") push_instr(cmpxchgx16, offset, ty, id, line, col);
+      else if (id == "cmpxchgx32") push_instr(cmpxchgx32, offset, ty, id, line, col);
+      else if (id == "cmpxchgx64") push_instr(cmpxchgx64, offset, ty, id, line, col);
+      else if (id == "ldmapfd")    push_instr(ldmapfd, offset, ty, id, line, col);
+      else if (id == "ld64")       push_instr(ld64, offset, ty, id, line, col);
+      else if (id == "ldabs8")     push_instr(ldabs8, offset, ty, id, line, col);
+      else if (id == "ldabs16")    push_instr(ldabs16, offset, ty, id, line, col);
+      else if (id == "ldabs32")    push_instr(ldabs32, offset, ty, id, line, col);
+      else if (id == "ldabs64")    push_instr(ldabs64, offset, ty, id, line, col);
+      else if (id == "ldind8")     push_instr(ldind8, offset, ty, id, line, col);
+      else if (id == "ldind16")    push_instr(ldind16, offset, ty, id, line, col);
+      else if (id == "ldind32")    push_instr(ldind32, offset, ty, id, line, col);
+      else if (id == "ldind64")    push_instr(ldind64, offset, ty, id, line, col);
+      else if (id == "ldx8")       push_instr(ldx8, offset, ty, id, line, col);
+      else if (id == "ldx16")      push_instr(ldx16, offset, ty, id, line, col);
+      else if (id == "ldx32")      push_instr(ldx32, offset, ty, id, line, col);
+      else if (id == "ldx64")      push_instr(ldx64, offset, ty, id, line, col);
+      else if (id == "st8")        push_instr(st8, offset, ty, id, line, col);
+      else if (id == "st16")       push_instr(st16, offset, ty, id, line, col);
+      else if (id == "st32")       push_instr(st32, offset, ty, id, line, col);
+      else if (id == "st64")       push_instr(st64, offset, ty, id, line, col);
+      else if (id == "stx8")       push_instr(stx8, offset, ty, id, line, col);
+      else if (id == "stx16")      push_instr(stx16, offset, ty, id, line, col);
+      else if (id == "stx32")      push_instr(stx32, offset, ty, id, line, col);
+      else if (id == "stx64")      push_instr(stx64, offset, ty, id, line, col);
+      else if (id == "stxx8")      push_instr(stxx8, offset, ty, id, line, col);
+      else if (id == "stxx16")     push_instr(stxx16, offset, ty, id, line, col);
+      else if (id == "stxx32")     push_instr(stxx32, offset, ty, id, line, col);
+      else if (id == "stxx64")     push_instr(stxx64, offset, ty, id, line, col);
+      else if (id == "ja")         push_instr(ja, offset, ty, id, line, col);
+      else if (id == "jeq")        push_instr(jeq, offset, ty, id, line, col);
+      else if (id == "jgt")        push_instr(jgt, offset, ty, id, line, col);
+      else if (id == "jge")        push_instr(jge, offset, ty, id, line, col);
+      else if (id == "jlt")        push_instr(jlt, offset, ty, id, line, col);
+      else if (id == "jle")        push_instr(jle, offset, ty, id, line, col);
+      else if (id == "jset")       push_instr(jset, offset, ty, id, line, col);
+      else if (id == "jne")        push_instr(jne, offset, ty, id, line, col);
+      else if (id == "jsgt")       push_instr(jsgt, offset, ty, id, line, col);
+      else if (id == "jsge")       push_instr(jsge, offset, ty, id, line, col);
+      else if (id == "jslt")       push_instr(jslt, offset, ty, id, line, col);
+      else if (id == "jsle")       push_instr(jsle, offset, ty, id, line, col);
+      else if (id == "call")       push_instr(call, offset, ty, id, line, col);
+      else if (id == "rel")        push_instr(rel, offset, ty, id, line, col);
+      else if (id == "exit")       push_instr(exit_ins, offset, ty, id, line, col);
+      else if (id == "jeq32")      push_instr(jeq32, offset, ty, id, line, col);
+      else if (id == "jgt32")      push_instr(jgt32, offset, ty, id, line, col);
+      else if (id == "jge32")      push_instr(jge32, offset, ty, id, line, col);
+      else if (id == "jlt32")      push_instr(jlt32, offset, ty, id, line, col);
+      else if (id == "jle32")      push_instr(jle32, offset, ty, id, line, col);
+      else if (id == "jset32")     push_instr(jset32, offset, ty, id, line, col);
+      else if (id == "jne32")      push_instr(jne32, offset, ty, id, line, col);
+      else if (id == "jsgt32")     push_instr(jsgt32, offset, ty, id, line, col);
+      else if (id == "jsge32")     push_instr(jsge32, offset, ty, id, line, col);
+      else if (id == "jslt32")     push_instr(jslt32, offset, ty, id, line, col);
+      else if (id == "jsle32")     push_instr(jsle32, offset, ty, id, line, col);
+      else if (id == "zext")       push_instr(zext, offset, ty, id, line, col);
     }
     /* Variables */
     else if (id == "var")
       push_var(i, id, line, col);
     /* Registers */
-    else if (sym == reg)
-      push_reg(sym, id, line, col);
+    else if (ty == reg)
+      push_reg(ty, id, line, col);
     /* Immediates */
-    else if (sym == imm)
+    else if (ty == imm)
       push_imm(i, line, col);
     /* Directives */
-    else if (sym == direc)
+    else if (ty == direc)
       ;
     /* Identifiers */
-    else if (sym == ident)
+    else if (ty == ident)
       push_id(i, id, line, col);
     else
       parse_err(line, col, id, "unexpected symbol ``"+id+"``");

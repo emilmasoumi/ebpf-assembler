@@ -15,13 +15,13 @@ typedef uint col_t;
 
 /*
   Symbol table for bytecode where each entry contains:
-  symbols, identifiers and their position.
+  types, identifiers and their position.
 */
 
-typedef enum {instr, ident, direc, imm, reg} Symbol;
+typedef enum {instr, ident, direc, imm, reg} Type;
 
 struct symtab_t {
-  Symbol type;
+  Type type;
   ident_t id;
   line_t line;
   col_t col;
@@ -30,9 +30,9 @@ struct symtab_t {
 extern std::vector<struct symtab_t> symtab;
 
 std::vector<struct symtab_t> lookup(ident_t);
-std::vector<struct symtab_t> lookup_typesafe(ident_t, Symbol);
+std::vector<struct symtab_t> lookup_typesafe(ident_t, Type);
 uint num_instr(void);
-std::string pp_symbol(Symbol);
+std::string pp_type(Type);
 void pp_symtab(void);
 
 #endif
