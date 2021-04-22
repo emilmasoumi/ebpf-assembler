@@ -10,12 +10,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <math.h>
 
 #include "../headers/bpf_insn.h"
 
-static inline int concat_bits(int x, int y) {
-  return x * pow(10, log10(y)+1) + y;
+static inline short byte_concat_bits(unsigned char x, unsigned char y) {
+  return (x << 8) | y;
+}
+
+static inline int short_concat_bits(short x, short y) {
+  return (x << 16) | y;
 }
 
 int main(int argc, char **argv) {
@@ -77,9 +80,9 @@ int main(int argc, char **argv) {
     opcode  = objcode[i-7];
     dst_reg = objcode[i-6] & 0xf;
     src_reg = (objcode[i-6]>>4) & 0xf;
-    off     = concat_bits(objcode[i-4], objcode[i-5]);
-    imm     = concat_bits(concat_bits(objcode[i], objcode[i-1]),
-                          concat_bits(objcode[i-2], objcode[i-3]));
+    off     = byte_concat_bits(objcode[i-4], objcode[i-5]);
+    imm     = short_concat_bits(byte_concat_bits(objcode[i], objcode[i-1]),
+                                byte_concat_bits(objcode[i-2], objcode[i-3]));
 
     printf("%05x: ", addr);
 
