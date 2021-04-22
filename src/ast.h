@@ -420,6 +420,7 @@ struct ast_t {
   Type type;
   ident_t id;
   uint off;
+  uint arg_num;
   line_t line;
   col_t col;
 };
@@ -432,7 +433,6 @@ extern std::vector<struct ast_t> absyn_tree;
 #define dealloc_absyn_tree() \
   (absyn_tree.erase(absyn_tree.begin(), absyn_tree.end()))
 
-int det_reg_val(std::string);
 std::string pp_subtype(Node);
 uint get_ops(Node);
 uint get_off(Node);
@@ -441,7 +441,7 @@ void pp_ast(void);
 /* Directives */
 struct dir {
   std::string name;
-  int val;
+  uint val;
 };
 
 #endif

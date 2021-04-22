@@ -1,24 +1,8 @@
-
 #include "ast.h"
 
 /* Generic abstract syntax tree as a m-ary tree. Each entry point (node) in
    the vector is a fixed-size collection of heterogeneous values. */
 std::vector<struct ast_t> absyn_tree;
-
-int det_reg_val(std::string r) {
-  if      (r == "r0")  return 0;
-  else if (r == "r1")  return 1;
-  else if (r == "r2")  return 2;
-  else if (r == "r3")  return 3;
-  else if (r == "r4")  return 4;
-  else if (r == "r5")  return 5;
-  else if (r == "r6")  return 6;
-  else if (r == "r7")  return 7;
-  else if (r == "r8")  return 8;
-  else if (r == "r9")  return 9;
-  else if (r == "r10") return 10;
-  return -1;
-}
 
 std::string pp_subtype(Node node) {
   if      (node == regs)       return "regs";
@@ -141,128 +125,6 @@ std::string pp_subtype(Node node) {
   else if (node == jsle32)     return "jsle32";
   else if (node == zext)       return "zext";
   return "type not found";
-}
-
-uint get_ops(Node node) {
-  if      (node == add)        return 2;
-  else if (node == sub)        return 2;
-  else if (node == mul)        return 2;
-  else if (node == div_ins)    return 2;
-  else if (node == or_ins)     return 2;
-  else if (node == and_ins)    return 2;
-  else if (node == lsh)        return 2;
-  else if (node == rsh)        return 2;
-  else if (node == neg)        return 1;
-  else if (node == mod)        return 2;
-  else if (node == xor_ins)    return 2;
-  else if (node == mov)        return 2;
-  else if (node == arsh)       return 2;
-  else if (node == add32)      return 2;
-  else if (node == sub32)      return 2;
-  else if (node == mul32)      return 2;
-  else if (node == div32)      return 2;
-  else if (node == or32)       return 2;
-  else if (node == and32)      return 2;
-  else if (node == lsh32)      return 2;
-  else if (node == rsh32)      return 2;
-  else if (node == neg32)      return 1;
-  else if (node == mod32)      return 2;
-  else if (node == xor32)      return 2;
-  else if (node == mov32)      return 2;
-  else if (node == arsh32)     return 2;
-  else if (node == le16)       return 1;
-  else if (node == le32)       return 1;
-  else if (node == le64)       return 1;
-  else if (node == be16)       return 1;
-  else if (node == be32)       return 1;
-  else if (node == be64)       return 1;
-  else if (node == addx16)     return 3;
-  else if (node == addx32)     return 3;
-  else if (node == addx64)     return 3;
-  else if (node == andx16)     return 3;
-  else if (node == andx32)     return 3;
-  else if (node == andx64)     return 3;
-  else if (node == orx16)      return 3;
-  else if (node == orx32)      return 3;
-  else if (node == orx64)      return 3;
-  else if (node == xorx16)     return 3;
-  else if (node == xorx32)     return 3;
-  else if (node == xorx64)     return 3;
-  else if (node == addfx16)    return 3;
-  else if (node == addfx32)    return 3;
-  else if (node == addfx64)    return 3;
-  else if (node == andfx16)    return 3;
-  else if (node == andfx32)    return 3;
-  else if (node == andfx64)    return 3;
-  else if (node == orfx16)     return 3;
-  else if (node == orfx32)     return 3;
-  else if (node == orfx64)     return 3;
-  else if (node == xorfx16)    return 3;
-  else if (node == xorfx32)    return 3;
-  else if (node == xorfx64)    return 3;
-  else if (node == xchgx16)    return 3;
-  else if (node == xchgx32)    return 3;
-  else if (node == xchgx64)    return 3;
-  else if (node == cmpxchgx16) return 3;
-  else if (node == cmpxchgx32) return 3;
-  else if (node == cmpxchgx64) return 3;
-  else if (node == ldmapfd)    return 2;
-  else if (node == ld64)       return 2;
-  else if (node == ldabs8)     return 1;
-  else if (node == ldabs16)    return 1;
-  else if (node == ldabs32)    return 1;
-  else if (node == ldabs64)    return 1;
-  else if (node == ldind8)     return 2;
-  else if (node == ldind16)    return 2;
-  else if (node == ldind32)    return 2;
-  else if (node == ldind64)    return 2;
-  else if (node == ldx8)       return 3;
-  else if (node == ldx16)      return 3;
-  else if (node == ldx32)      return 3;
-  else if (node == ldx64)      return 3;
-  else if (node == st8)        return 3;
-  else if (node == st16)       return 3;
-  else if (node == st32)       return 3;
-  else if (node == st64)       return 3;
-  else if (node == stx8)       return 3;
-  else if (node == stx16)      return 3;
-  else if (node == stx32)      return 3;
-  else if (node == stx64)      return 3;
-  else if (node == stxx8)      return 3;
-  else if (node == stxx16)     return 3;
-  else if (node == stxx32)     return 3;
-  else if (node == stxx64)     return 3;
-  else if (node == ja)         return 1;
-  else if (node == jeq)        return 3;
-  else if (node == jgt)        return 3;
-  else if (node == jge)        return 3;
-  else if (node == jlt)        return 3;
-  else if (node == jle)        return 3;
-  else if (node == jset)       return 3;
-  else if (node == jne)        return 3;
-  else if (node == jsgt)       return 3;
-  else if (node == jsge)       return 3;
-  else if (node == jslt)       return 3;
-  else if (node == jsle)       return 3;
-  else if (node == call)       return 1;
-  else if (node == rel)        return 1;
-  else if (node == exit_ins)   return 0;
-  else if (node == jeq32)      return 3;
-  else if (node == jgt32)      return 3;
-  else if (node == jge32)      return 3;
-  else if (node == jlt32)      return 3;
-  else if (node == jle32)      return 3;
-  else if (node == jset32)     return 3;
-  else if (node == jne32)      return 3;
-  else if (node == jsgt32)     return 3;
-  else if (node == jsge32)     return 3;
-  else if (node == jslt32)     return 3;
-  else if (node == jsle32)     return 3;
-  else if (node == zext)       return 1;
-  else
-    error("type error: type ``" + pp_subtype(node) + "`` not found in "
-          "get_ops()");
-  return 0;
 }
 
 void pp_ast(void) {

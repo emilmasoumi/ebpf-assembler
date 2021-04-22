@@ -34,9 +34,9 @@ void typechecker(void) {
     node_v = node.node_v;
     line   = node.line;
     col    = node.col;
+    ops    = node.arg_num;
 
     if (type == instr) {
-      ops = get_ops(node_v);
       if (i+ops >= size)
         error(line, ":", col, ": type error: instruction ", id, " expects ",
               ops, " operands, but was here given ", size-i-1, " operand(s)");

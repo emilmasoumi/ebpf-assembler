@@ -10,7 +10,6 @@ std::vector<struct symtab_t> lookup(ident_t id) {
   for (struct symtab_t entry : symtab)
     if (entry.id == id)
       sub_symtab.push_back(entry);
-
   return sub_symtab;
 }
 
@@ -19,17 +18,7 @@ std::vector<struct symtab_t> lookup_typesafe(ident_t id, Type ty) {
   for (struct symtab_t entry : symtab)
     if (entry.id == id && entry.type == ty)
       sub_symtab.push_back(entry);
-
   return sub_symtab;
-}
-
-uint num_instr(void) {
-  uint count = 0;
-  for (struct symtab_t entry : symtab) {
-    if (entry.type == instr)
-      count++;
-  }
-  return count;
 }
 
 std::string pp_type(Type ty) {

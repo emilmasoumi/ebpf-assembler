@@ -66,7 +66,6 @@ void codegen(std::string out_fname) {
   uint size;
   ast_t node;
   Node node_v, node_v1, node_v2, node_v3;
-  Type type;
   ident_t id1, id2, id3;
   uint i, prog_len, ops;
   // errors reported by valgrind are subdued when assigning a smaller
@@ -82,12 +81,7 @@ void codegen(std::string out_fname) {
   for (i=0; i<size; i++) {
     node   = absyn_tree[i];
     node_v = node.node_v;
-    type   = node.type;
-
-    if (type == instr)
-      ops = get_ops(node_v);
-    else
-      ops = 0;
+    ops    = node.arg_num;
 
     if (ops == 1) {
       id1     = absyn_tree[i+1].id;
@@ -1149,7 +1143,6 @@ void codegen_str(std::string out_fname, std::string struct_name) {
   ast_t node;
   Node node_v, node_v1, node_v2, node_v3;
   ident_t id1, id2, id3;
-  Type type;
   std::string c_code;
 
   if (struct_name.size())
@@ -1165,12 +1158,7 @@ void codegen_str(std::string out_fname, std::string struct_name) {
   for (i=0; i<size; i++) {
     node   = absyn_tree[i];
     node_v = node.node_v;
-    type   = node.type;
-
-    if (type == instr)
-      ops = get_ops(node_v);
-    else
-      ops = 0;
+    ops    = node.arg_num;
 
     if (ops == 1) {
       id1     = absyn_tree[i+1].id;

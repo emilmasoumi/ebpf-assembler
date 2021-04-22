@@ -2,10 +2,8 @@ An eBPF bytecode assembler and compiler that
   * Assembles the bytecode to object code.
   * Compiles the bytecode to C macro preprocessors.
 
-The assembler supports variables with a `var` construct that has the mnemonic
-signature: `var id imm|var` and is able to assign a numerical value to an
-identifier. Variables are mutable and symbolic names are resolved during
-parsing. The bytecode is statically type checked during compile time.
+Symbolic names are resolved during parsing and the bytecode is statically
+type checked during compile time.
 
 Instructions that have 32-bit equivalents are suffixed with `32`. For example:
 `mov32 r0 8` or `jne32 r1 r2 pc+4`. Some instructions cannot perform operations
@@ -52,11 +50,13 @@ Example:
 ; comment
 mov r1 64
 mov32 r2 32
-jlt r2 r1 5
-jge r1 r2 6
+jlt r2 r1 end
+jge r1 r2 end
+loop:
 sub r1 1
 add32 r2 1
-jle r1 r2 -2
+jle r1 r2 loop
+end:
 mov r0 0
 exit
 ```
