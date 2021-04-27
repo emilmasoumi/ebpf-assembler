@@ -1,2 +1,5 @@
 mov r0 0
-10
+dir:
+dir:
+mov r0 0
+exit

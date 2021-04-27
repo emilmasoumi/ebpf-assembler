@@ -131,57 +131,58 @@ stxx64  r0 r1 8
 ;;;; Branch instructions:
 ; 64-bit:
 ja   8
-jeq  r0 128 8
-jeq  r0 r1 8
-jgt  r0 128 8
-jgt  r0 r1 8
-jge  r0 128 8
-jge  r0 r1 8
-jlt  r0 128 8
-jlt  r0 r1 8
-jle  r0 128 8
-jle  r0 r1 8
-jset r0 128 8
-jset r0 r1 8
-jne  r0 128 8
-jne  r0 r1 8
-jsgt r0 128 8
-jsgt r0 r1 8
-jsge r0 128 8
-jsge r0 r1 8
-jslt r0 128 8
-jslt r0 r1 8
-jsle r0 128 8
-jsle r0 r1 8
+jeq  r0 128 done
+jeq  r0 r1 done
+jgt  r0 128 done
+jgt  r0 r1 done
+jge  r0 128 done
+jge  r0 r1 done
+jlt  r0 128 done
+jlt  r0 r1 done
+jle  r0 128 done
+jle  r0 r1 done
+jset r0 128 done
+jset r0 r1 done
+jne  r0 128 done
+jne  r0 r1 done
+jsgt r0 128 done
+jsgt r0 r1 done
+jsge r0 128 done
+jsge r0 r1 done
+jslt r0 128 done
+jslt r0 r1 done
+jsle r0 128 done
+jsle r0 r1 done
 ;call 44
 rel  44
 
 ; 32-bit:
-jeq32  r0 128 8
-jeq32  r0 r1 8
-jgt32  r0 128 8
-jgt32  r0 r1 8
-jge32  r0 128 8
-jge32  r0 r1 8
-jlt32  r0 128 8
-jlt32  r0 r1 8
-jle32  r0 128 8
-jle32  r0 r1 8
-jset32 r0 128 8
-jset32 r0 r1 8
-jne32  r0 128 8
-jne32  r0 r1 8
-jsgt32 r0 128 8
-jsgt32 r0 r1 8
-jsge32 r0 128 8
-jsge32 r0 r1 8
-jslt32 r0 128 8
-jslt32 r0 r1 8
-jsle32 r0 128 8
-jsle32 r0 r1 8
+jeq32  r0 128 done
+jeq32  r0 r1 done
+jgt32  r0 128 done
+jgt32  r0 r1 done
+jge32  r0 128 done
+jge32  r0 r1 done
+jlt32  r0 128 done
+jlt32  r0 r1 done
+jle32  r0 128 done
+jle32  r0 r1 done
+jset32 r0 128 done
+jset32 r0 r1 done
+jne32  r0 128 done
+jne32  r0 r1 done
+jsgt32 r0 128 done
+jsgt32 r0 r1 done
+jsge32 r0 128 done
+jsge32 r0 r1 done
+jslt32 r0 128 done
+jslt32 r0 r1 done
+jsle32 r0 128 done
+jsle32 r0 r1 done
 
 ;;;; Special instructions:
 zext r0
 
+done:
 ;;;; Branch instruction exit:
 exit
