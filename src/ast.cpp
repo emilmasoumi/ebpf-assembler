@@ -1,7 +1,6 @@
 #include "ast.h"
 
-/* Generic abstract syntax tree as a m-ary tree. Each entry point (node) in
-   the vector is a fixed-size collection of heterogeneous values. */
+/* Abstract syntax tree as an m-ary tree. */
 std::vector<struct ast_t> absyn_tree;
 
 std::string pp_subtype(Node node) {

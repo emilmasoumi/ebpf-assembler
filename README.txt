@@ -6,8 +6,9 @@ Symbolic names are resolved during parsing and the bytecode is statically
 type checked during compile time.
 
 Instructions that have 32-bit equivalents are suffixed with `32`. For example:
-`mov32 r0 8` or `jne32 r1 r2 pc+4`. Some instructions cannot perform operations
-on certain bit-sizes and will in such cases default to a lower bit-size.
+`mov32 r0 8` or `jne32 r1 r2 label`. Some instructions cannot perform
+operations on certain bit-sizes and will in such cases default to a lower
+bit-size.
 
 Emitting function calls is not possible, as the implementation of the called
 function must be present during compile-time of the assembler. Emitting calls
@@ -310,6 +311,11 @@ if `s` is 1.
 |----------|-----------------------------------------
 | zext dst | mov32 dst; explicitly zero extending dst
 -----------------------------------------------------
+
+--------
+Author:
+
+Emil Masoumi
 
 --------
 References:

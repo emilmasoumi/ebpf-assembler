@@ -23,7 +23,7 @@ static inline __u8 map_reg(ident_t id) {
   else if (id == "r8")  return BPF_REG_8;
   else if (id == "r9")  return BPF_REG_9;
   else if (id == "r10") return BPF_REG_10;
-  else error("map_reg(): unknown register ", id);
+  else error("map_reg(): unknown register: ", id);
   return -1;
 }
 
@@ -43,7 +43,7 @@ static inline __u8 get_reg(Node n, ident_t id) {
 
 static inline std::string get_reg_str(Node n, ident_t id) {
   if (n != regs)
-    error("get_reg_str(): not a register: ", pp_subtype(n));
+    error("get_reg_str(): not a register: ", pp_subtype(n), ", id: ", id);
 
   if      (id == "r0")  return "BPF_REG_0";
   else if (id == "r1")  return "BPF_REG_1";
