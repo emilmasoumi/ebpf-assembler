@@ -28,12 +28,6 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  if (argc != 2) {
-    printf("%s: error: No eBPF object code provided\n", *argv);
-    printf("usage: %s <file-with-object-code>\n", *argv);
-    return 1;
-  }
-
   char* fname = *++argv;
 
   int fd;
@@ -63,7 +57,7 @@ int main(int argc, char **argv) {
   close(fd);
 
   if (size < 8) {
-    printf("error: object code cannot be less than 8 bytes\n");
+    printf("error: eBPF object code cannot be less than 8 bytes\n");
     return 1;
   }
 

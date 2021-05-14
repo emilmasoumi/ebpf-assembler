@@ -1122,6 +1122,7 @@ void codegen(std::string out_fname) {
                         (__s16)get_val<int>(node_v3, id3));
     }
 
+    /* zext dst */
     else if (node_v == zext) {
       prog[prog_len++] = BPF_ZEXT_REG(get_reg(node_v1, id1));
     }
