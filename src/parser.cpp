@@ -125,9 +125,9 @@ static inline void push_reg(Type ty, ident_t id, uint line, uint col) {
 static inline void push_imm(ident_t id, uint line, uint col) {
   int i;
   if (is_hex(id))
-    i = std::stoi(id, 0, 16);
+    i = stoi_w(id, 0, 16);
   else
-    i = std::stoi(id);
+    i = stoi_w(id);
   absyn_tree.push_back({imm_int, imm, std::to_string(i), 0, 0, line, col});
 }
 

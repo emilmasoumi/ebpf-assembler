@@ -29,8 +29,8 @@ static inline __u8 map_reg(ident_t id) {
 
 template <typename T>
 static inline T get_val(Node n, ident_t id) {
-  if      (n == imm_int)   return std::stoi(id);
-  else if (n == imm_float) return std::stof(id);
+  if      (n == imm_int)   return stoi_w(id);
+  else if (n == imm_float) return stof_w(id);
   else error("get_val(): not an immediate: ", pp_subtype(n), ", id: ", id);
   return -1;
 }

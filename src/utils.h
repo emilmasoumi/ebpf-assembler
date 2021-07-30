@@ -18,6 +18,9 @@ void error(T0 v0, Tn... vn) {
   error(vn...);
 }
 
+int stoi_w(const std::string& str, std::size_t* idx = 0, int base = 10);
+int stof_w(const std::string& str, std::size_t* idx = 0);
+
 std::string err_getline(std::string, uint, uint);
 std::string pp_spaces(std::string, uint);
 

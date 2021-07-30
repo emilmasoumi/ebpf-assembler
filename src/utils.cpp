@@ -14,6 +14,50 @@ void error() {
   exit(1);
 }
 
+// stoi() wrapper.
+int stoi_w(const std::string& str, std::size_t* idx, int base) {
+  try {
+    return std::stoi(str, idx, base);
+  }
+
+  catch (const std::invalid_argument& ia) {
+    error("error: ", ia.what(), ": invalid argument: for the value ", str);
+    return -1;
+  }
+
+  catch (const std::out_of_range& oor) {
+    error("error: ", oor.what(), ": out of range: for the value ", str);
+    return -2;
+  }
+
+  catch (const std::exception& e) {
+    error("error: ", e.what(), ": undefined error");
+    return -3;
+  }
+}
+
+// stof() wrapper.
+int stof_w(const std::string& str, std::size_t* idx) {
+  try {
+    return std::stof(str, idx);
+  }
+
+  catch (const std::invalid_argument& ia) {
+    error("error: ", ia.what(), ": invalid argument: for the value ", str);
+    return -1;
+  }
+
+  catch (const std::out_of_range& oor) {
+    error("error: ", oor.what(), ": out of range: for the value ", str);
+    return -2;
+  }
+
+  catch (const std::exception& e) {
+    error("error: ", e.what(), ": undefined error");
+    return -3;
+  }
+}
+
 std::string err_getline(std::string id, uint line_num, uint col_num) {
   if (col_num > id.size()+2)
     col_num -= id.size()+2;
