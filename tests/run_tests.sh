@@ -3,7 +3,7 @@
 if [ -z $EBPF_AS ]; then
   echo "error: bash environment variable EBPF_AS is undefined."
   echo "The variable must be assigned the entire path to the assembler."
-  echo "Example: \$ export EBPF_AS=\"home/username/ebpf-assembler/ebpf-as\""
+  echo "Example: \$ export EBPF_AS=\"/home/username/ebpf-assembler/ebpf-as\""
   exit 1
 fi
 
