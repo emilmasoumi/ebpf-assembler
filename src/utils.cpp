@@ -14,7 +14,7 @@ void error() {
   exit(1);
 }
 
-// stoi() wrapper.
+// std::stoi() wrapper.
 int stoi_w(const std::string& str, std::size_t* idx, int base) {
   try {
     return std::stoi(str, idx, base);
@@ -36,7 +36,7 @@ int stoi_w(const std::string& str, std::size_t* idx, int base) {
   }
 }
 
-// stof() wrapper.
+// std::stof() wrapper.
 int stof_w(const std::string& str, std::size_t* idx) {
   try {
     return std::stof(str, idx);
