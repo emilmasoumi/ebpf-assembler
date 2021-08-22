@@ -1,8 +1,6 @@
 /*
   Load C macro preprocessors defining the bytecode, stored in a composite type
   struct defined in `macros.h`.
-
-  Author: Emil Masoumi
 */
 
 #define _GNU_SOURCE
@@ -58,15 +56,6 @@ static int bpf_prog_load(enum bpf_prog_type prog_type,
   bpf_log_buf[0] = 0;
   return syscall(__NR_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
 }
-
-//static int bpf_lookup_elem(int fd, const void *key, void *value) {
-//  union bpf_attr attr = {
-//    .map_fd = fd,
-//    .key    = ptr_to_u64(key),
-//    .value  = ptr_to_u64(value),
-//    };
-//    return syscall(__NR_bpf, BPF_MAP_LOOKUP_ELEM, &attr, sizeof(attr));
-//}
 
 static int probe_filter_length(struct bpf_insn *fp) {
   int len = 0;

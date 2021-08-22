@@ -1,7 +1,5 @@
 /*
   Load eBPF bytecode from a file containing the object code into the kernel.
-
-  Author: Emil Masoumi
 */
 
 #define _GNU_SOURCE
@@ -32,11 +30,11 @@ int bpf_prog_load(enum bpf_prog_type prog_type,
                   const char *license) {
   union bpf_attr attr = {
     .prog_type = prog_type,
-    .insns = ptr_to_u64((void *) insns),
-    .insn_cnt = prog_len / sizeof(struct bpf_insn),
-    .license = ptr_to_u64((void *) license),
-    .log_buf = ptr_to_u64(ebpf_log_buf),
-    .log_size = LOG_BUF_SIZE,
+    .insns     = ptr_to_u64((void *) insns),
+    .insn_cnt  = prog_len / sizeof(struct bpf_insn),
+    .license   = ptr_to_u64((void *) license),
+    .log_buf   = ptr_to_u64(ebpf_log_buf),
+    .log_size  = LOG_BUF_SIZE,
     .log_level = 1,
   };
 
@@ -48,9 +46,9 @@ int bpf_prog_load(enum bpf_prog_type prog_type,
 int bpf_create_map(enum bpf_map_type map_type, int key_size, int value_size,
                    int max_entries) {
   union bpf_attr attr = {
-    .map_type = map_type,
-    .key_size = key_size,
-    .value_size = value_size,
+    .map_type    = map_type,
+    .key_size    = key_size,
+    .value_size  = value_size,
     .max_entries = max_entries
   };
 
