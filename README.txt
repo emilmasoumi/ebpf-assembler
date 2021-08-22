@@ -17,7 +17,7 @@ C preprocessing macros instead of object code. Relevant BPF functions may be
 implemented in the future.
 
 A disassembler is provided and can be used with:
-./objdump-ebpf <file-with-object-code>
+./disas-ebpf <file-with-object-code>
 
 The test folder contains useful utility tools to load eBPF object code into
 the kernel (load_ebpf) and to load bytecode defined in C preprocessing macros

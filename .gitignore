@@ -1,5 +1,5 @@
 ebpf-as
-objdump-ebpf
+disas-ebpf
 load_ebpf
 load_ebpf_macros
 
