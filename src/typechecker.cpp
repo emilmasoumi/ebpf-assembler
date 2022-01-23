@@ -1,20 +1,13 @@
-/*
-  Type check the instructions of the bytecode in the abstract syntax tree.
-*/
-
 #include "typechecker.h"
 
-static inline void unexpected_op_err(uint line, uint col, ident_t id1,
-                                                          ident_t id2) {
-  error(line, ":", col, ": type error: unexpected operand ``", id1,
-        "`` passed to ``", id2, "``", err_getline(id2, line, col));
-}
+#define unexpected_op_err(line, col, id1, id2) \
+  (error(line, ":", col, ": type error: unexpected operand ``", id1, \
+         "`` passed to ``", id2, "``", err_getline(id2, line, col)))
 
-static inline void forward_err(uint line, uint col, ident_t id, Type ty) {
-  error(line, ":", col, ": type error: expected an instruction or directive "
-        "here, but instead got ``", id, "`` of type ``", pp_type(ty), "``",
-        err_getline(id, line, col));
-}
+#define forward_err(line, col, id, ty) \
+  (error(line, ":", col, ": type error: expected an instruction or " \
+         "directive here, but instead got ``", id, "`` of type ``",  \
+         pp_type(ty), "``", err_getline(id, line, col)))
 
 void typechecker(void) {
   std::string id;
@@ -25,10 +18,10 @@ void typechecker(void) {
   Node node_v;
   uint line, col;
 
-  size = absyn_tree.size();
+  size = ast.size();
 
   for (uint i=0; i<size; i++) {
-    node   = absyn_tree[i];
+    node   = ast[i];
     id     = node.id;
     type   = node.type;
     node_v = node.node_v;
@@ -53,14 +46,14 @@ void typechecker(void) {
           node_v == div32   || node_v == or32   || node_v == and32   ||
           node_v == lsh32   || node_v == rsh32  || node_v == mod32   ||
           node_v == xor32   || node_v == mov32  || node_v == arsh32) {
-        if (absyn_tree[i+1].type != reg)
-          unexpected_op_err(line, col, absyn_tree[i+1].id, id);
-        else if (absyn_tree[i+2].type != reg && absyn_tree[i+2].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+2].id, id);
-        else if (i+3 < size && absyn_tree[i+3].type != instr &&
-                 absyn_tree[i+3].type != direc)
-          forward_err(absyn_tree[i+3].line, absyn_tree[i+3].col,
-                      absyn_tree[i+3].id,   absyn_tree[i+3].type);
+        if (ast[i+1].type != reg)
+          unexpected_op_err(line, col, ast[i+1].id, id);
+        else if (ast[i+2].type != reg && ast[i+2].type != imm)
+          unexpected_op_err(line, col, ast[i+2].id, id);
+        else if (i+3 < size && ast[i+3].type != instr &&
+                 ast[i+3].type != direc)
+          forward_err(ast[i+3].line, ast[i+3].col,
+                      ast[i+3].id,   ast[i+3].type);
       }
 
       /* Type check INSTR REG. */
@@ -70,28 +63,28 @@ void typechecker(void) {
       else if (node_v == le16 || node_v == le32  || node_v == le64  ||
                node_v == be16 || node_v == be32  || node_v == be64  ||
                node_v == neg  || node_v == neg32 || node_v == zext) {
-        if (absyn_tree[i+1].type != reg)
-          unexpected_op_err(line, col, absyn_tree[i+1].id, id);
-        else if (i+2 < size && absyn_tree[i+2].type != instr &&
-                 absyn_tree[i+2].type != direc)
-          forward_err(absyn_tree[i+2].line, absyn_tree[i+2].col,
-                      absyn_tree[i+2].id,   absyn_tree[i+2].type);
+        if (ast[i+1].type != reg)
+          unexpected_op_err(line, col, ast[i+1].id, id);
+        else if (i+2 < size && ast[i+2].type != instr &&
+                 ast[i+2].type != direc)
+          forward_err(ast[i+2].line, ast[i+2].col,
+                      ast[i+2].id,   ast[i+2].type);
       }
 
       /* Type check INSTR REG IMM IMM. */
       /* st8, st16, st32, st64 */
       else if (node_v == st8  || node_v == st16 ||
                node_v == st32 || node_v == st64) {
-        if (absyn_tree[i+1].type != reg)
-          unexpected_op_err(line, col, absyn_tree[i+1].id, id);
-        else if (absyn_tree[i+2].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+2].id, id);
-        else if (absyn_tree[i+3].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+3].id, id);
-        else if (i+4 < size && absyn_tree[i+4].type != instr &&
-                 absyn_tree[i+4].type != direc)
-          forward_err(absyn_tree[i+4].line, absyn_tree[i+4].col,
-                      absyn_tree[i+4].id,   absyn_tree[i+4].type);
+        if (ast[i+1].type != reg)
+          unexpected_op_err(line, col, ast[i+1].id, id);
+        else if (ast[i+2].type != imm)
+          unexpected_op_err(line, col, ast[i+2].id, id);
+        else if (ast[i+3].type != imm)
+          unexpected_op_err(line, col, ast[i+3].id, id);
+        else if (i+4 < size && ast[i+4].type != instr &&
+                 ast[i+4].type != direc)
+          forward_err(ast[i+4].line, ast[i+4].col,
+                      ast[i+4].id,   ast[i+4].type);
       }
 
       /* Type check INSTR REG IMM. */
@@ -99,14 +92,14 @@ void typechecker(void) {
       else if (node_v == ldmapfd || node_v == ld64    ||
                node_v == ldind8  || node_v == ldind16 ||
                node_v == ldind32 || node_v == ldind64) {
-        if (absyn_tree[i+1].type != reg)
-          unexpected_op_err(line, col, absyn_tree[i+1].id, id);
-        else if (absyn_tree[i+2].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+2].id, id);
-        else if (i+3 < size && absyn_tree[i+3].type != instr &&
-                 absyn_tree[i+3].type != direc)
-          forward_err(absyn_tree[i+3].line, absyn_tree[i+3].col,
-                      absyn_tree[i+3].id,   absyn_tree[i+3].type);
+        if (ast[i+1].type != reg)
+          unexpected_op_err(line, col, ast[i+1].id, id);
+        else if (ast[i+2].type != imm)
+          unexpected_op_err(line, col, ast[i+2].id, id);
+        else if (i+3 < size && ast[i+3].type != instr &&
+                 ast[i+3].type != direc)
+          forward_err(ast[i+3].line, ast[i+3].col,
+                      ast[i+3].id,   ast[i+3].type);
       }
 
       /* Type check INSTR IMM. */
@@ -115,12 +108,12 @@ void typechecker(void) {
       else if (node_v == ldabs8  || node_v == ldabs16 || node_v == ldabs32 ||
                node_v == ldabs64 || node_v == ja      || node_v == call    ||
                node_v == rel) {
-        if (absyn_tree[i+1].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+1].id, id);
-        else if (i+2 < size && absyn_tree[i+2].type != instr &&
-                 absyn_tree[i+2].type != direc)
-          forward_err(absyn_tree[i+2].line, absyn_tree[i+2].col,
-                      absyn_tree[i+2].id,   absyn_tree[i+2].type);
+        if (ast[i+1].type != imm)
+          unexpected_op_err(line, col, ast[i+1].id, id);
+        else if (i+2 < size && ast[i+2].type != instr &&
+                 ast[i+2].type != direc)
+          forward_err(ast[i+2].line, ast[i+2].col,
+                      ast[i+2].id,   ast[i+2].type);
       }
 
       /* Type check INSTR REG REG|IMM IMM. */
@@ -135,24 +128,24 @@ void typechecker(void) {
                node_v == jle32  || node_v == jset32 || node_v == jne32  ||
                node_v == jsgt32 || node_v == jsge32 || node_v == jslt32 ||
                node_v == jsle32) {
-        if (absyn_tree[i+1].type != reg)
-          unexpected_op_err(line, col, absyn_tree[i+1].id, id);
-        else if (absyn_tree[i+2].type != reg && absyn_tree[i+2].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+2].id, id);
-        else if (absyn_tree[i+3].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+3].id, id);
-        else if (i+4 < size && absyn_tree[i+4].type != instr &&
-                 absyn_tree[i+4].type != direc)
-          forward_err(absyn_tree[i+4].line, absyn_tree[i+4].col,
-                      absyn_tree[i+4].id,   absyn_tree[i+4].type);
+        if (ast[i+1].type != reg)
+          unexpected_op_err(line, col, ast[i+1].id, id);
+        else if (ast[i+2].type != reg && ast[i+2].type != imm)
+          unexpected_op_err(line, col, ast[i+2].id, id);
+        else if (ast[i+3].type != imm)
+          unexpected_op_err(line, col, ast[i+3].id, id);
+        else if (i+4 < size && ast[i+4].type != instr &&
+                 ast[i+4].type != direc)
+          forward_err(ast[i+4].line, ast[i+4].col,
+                      ast[i+4].id,   ast[i+4].type);
       }
 
       /* Type check EXIT. */
       else if (node_v == exit_ins) {
-        if (i+1 < size && absyn_tree[i+1].type != instr &&
-            absyn_tree[i+1].type != direc)
-         forward_err(absyn_tree[i+1].line, absyn_tree[i+1].col,
-                     absyn_tree[i+1].id,   absyn_tree[i+1].type);
+        if (i+1 < size && ast[i+1].type != instr &&
+            ast[i+1].type != direc)
+         forward_err(ast[i+1].line, ast[i+1].col,
+                     ast[i+1].id,   ast[i+1].type);
       }
 
       /* Type check INSTR REG REG IMM. */
@@ -163,26 +156,26 @@ void typechecker(void) {
          ldx8, ldx16, ldx32, ldx64, stx8, stx16, stx32, stx64, stxx8, stxx16,
          stxx32, stxx64 */
       else {
-        if (absyn_tree[i+1].type != reg)
-          unexpected_op_err(line, col, absyn_tree[i+1].id, id);
-        else if (absyn_tree[i+2].type != reg)
-          unexpected_op_err(line, col, absyn_tree[i+2].id, id);
-        else if (absyn_tree[i+3].type != imm)
-          unexpected_op_err(line, col, absyn_tree[i+3].id, id);
-        else if (i+4 < size && absyn_tree[i+4].type != instr &&
-                 absyn_tree[i+4].type != direc)
-          forward_err(absyn_tree[i+4].line, absyn_tree[i+4].col,
-                      absyn_tree[i+4].id,   absyn_tree[i+4].type);
+        if (ast[i+1].type != reg)
+          unexpected_op_err(line, col, ast[i+1].id, id);
+        else if (ast[i+2].type != reg)
+          unexpected_op_err(line, col, ast[i+2].id, id);
+        else if (ast[i+3].type != imm)
+          unexpected_op_err(line, col, ast[i+3].id, id);
+        else if (i+4 < size && ast[i+4].type != instr &&
+                 ast[i+4].type != direc)
+          forward_err(ast[i+4].line, ast[i+4].col,
+                      ast[i+4].id,   ast[i+4].type);
       }
 
     }
 
     /* Type check directive */
     else if (type ==  direc) {
-      if (i+1 < size && absyn_tree[i+1].type != instr &&
-          absyn_tree[i+1].type != direc)
-        forward_err(absyn_tree[i+1].line, absyn_tree[i+1].col,
-                    absyn_tree[i+1].id,   absyn_tree[i+1].type);
+      if (i+1 < size && ast[i+1].type != instr &&
+          ast[i+1].type != direc)
+        forward_err(ast[i+1].line, ast[i+1].col,
+                    ast[i+1].id,   ast[i+1].type);
     }
 
   }

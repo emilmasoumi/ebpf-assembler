@@ -1,6 +1,6 @@
 dir:
-dir1 :
-dir2    :
+dir1:
+dir2:
 lab:
-lab1  :
+lab1:
 mov r0 -0x94

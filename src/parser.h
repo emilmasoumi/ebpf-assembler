@@ -2,7 +2,6 @@
 #define PARSER
 
 #include "ast.h"
-#include "symtab.h"
 #include "utils.h"
 
 static const std::string registers[] =

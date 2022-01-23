@@ -1,10 +1,14 @@
 #include <ostream>
 #include <cstdint>
-
-#include "symtab.h"
+#include <vector>
+#include <iostream>
+#include <iomanip>
+#include "utils.h"
 
 #ifndef AST
 #define AST
+
+typedef enum {instr, ident, direc, imm, reg} Type;
 
 typedef enum {
   /* Directives */
@@ -415,33 +419,36 @@ typedef enum {
 
 } Node;
 
+typedef std::string ident_t;
+typedef size_t line_t;
+typedef size_t col_t;
+
 struct ast_t {
   Node node_v;
   Type type;
   ident_t id;
-  uint off;
-  uint arg_num;
+  size_t off;
+  size_t arg_num;
   line_t line;
   col_t col;
 };
 
-extern std::vector<struct ast_t> absyn_tree;
+extern std::vector<ast_t> ast;
 
 #define CMP_TYPES(t1, t2) (std::is_same<t1, t2>::value)
 #define TYPENAME(e) (typeid(e).name())
 
-#define dealloc_absyn_tree() \
-  (absyn_tree.erase(absyn_tree.begin(), absyn_tree.end()))
+#define dealloc_ast() (ast.erase(ast.begin(), ast.end()))
 
-std::string pp_subtype(Node);
+std::string pp_node(Node);
+std::string pp_type(Type);
 uint get_ops(Node);
 uint get_off(Node);
 void pp_ast(void);
 
-/* Directives */
-struct dir {
-  std::string name;
-  uint val;
+struct symtab_t {
+  std::string id;
+  size_t off;
 };
 
 #endif

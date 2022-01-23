@@ -1,6 +1,3 @@
-/*
-  Generate object code or C macro preprocessors.
-*/
 #include <../headers/bpf_insn.h>
 #include "codegen.h"
 
@@ -31,19 +28,19 @@ template <typename T>
 static inline T get_val(Node n, ident_t id) {
   if      (n == imm_int)   return stoi_w(id);
   else if (n == imm_float) return stof_w(id);
-  else error("get_val(): not an immediate: ", pp_subtype(n), ", id: ", id);
+  else error("get_val(): not an immediate: ", pp_node(n), ", id: ", id);
   return -1;
 }
 
 static inline __u8 get_reg(Node n, ident_t id) {
   if (n == regs) return map_reg(id);
-  else error("get_reg(): not a register: ", pp_subtype(n), ", id: ", id);
+  else error("get_reg(): not a register: ", pp_node(n), ", id: ", id);
   return -1;
 }
 
 static inline std::string get_reg_str(Node n, ident_t id) {
   if (n != regs)
-    error("get_reg_str(): not a register: ", pp_subtype(n), ", id: ", id);
+    error("get_reg_str(): not a register: ", pp_node(n), ", id: ", id);
 
   if      (id == "r0")  return "BPF_REG_0";
   else if (id == "r1")  return "BPF_REG_1";
@@ -57,7 +54,7 @@ static inline std::string get_reg_str(Node n, ident_t id) {
   else if (id == "r9")  return "BPF_REG_9";
   else if (id == "r10") return "BPF_REG_10";
 
-  error("get_reg_str(): not a register: ", pp_subtype(n), ", id: ", id);
+  error("get_reg_str(): not a register: ", pp_node(n), ", id: ", id);
   return "";
 }
 
@@ -72,34 +69,34 @@ void codegen(std::string out_fname) {
   // ``prog`` array size.
   struct bpf_insn prog[1000000];
 
-  size     = absyn_tree.size();
+  size     = ast.size();
   prog_len = 0;
 
   // suppress -Werror=maybe-uninitialized warnings.
   node_v1 = node_v2 = node_v3 = dead_ins;
 
   for (i=0; i<size; i++) {
-    node   = absyn_tree[i];
+    node   = ast[i];
     node_v = node.node_v;
     ops    = node.arg_num;
 
     if (ops == 1) {
-      id1     = absyn_tree[i+1].id;
-      node_v1 = absyn_tree[i+1].node_v;
+      id1     = ast[i+1].id;
+      node_v1 = ast[i+1].node_v;
     }
     else if (ops == 2) {
-      id1     = absyn_tree[i+1].id;
-      id2     = absyn_tree[i+2].id;
-      node_v1 = absyn_tree[i+1].node_v;
-      node_v2 = absyn_tree[i+2].node_v;
+      id1     = ast[i+1].id;
+      id2     = ast[i+2].id;
+      node_v1 = ast[i+1].node_v;
+      node_v2 = ast[i+2].node_v;
     }
     else if (ops == 3) {
-      id1     = absyn_tree[i+1].id;
-      id2     = absyn_tree[i+2].id;
-      id3     = absyn_tree[i+3].id;
-      node_v1 = absyn_tree[i+1].node_v;
-      node_v2 = absyn_tree[i+2].node_v;
-      node_v3 = absyn_tree[i+3].node_v;
+      id1     = ast[i+1].id;
+      id2     = ast[i+2].id;
+      id3     = ast[i+3].id;
+      node_v1 = ast[i+1].node_v;
+      node_v2 = ast[i+2].node_v;
+      node_v3 = ast[i+3].node_v;
     }
 
     /* ALU instructions: */
@@ -1151,33 +1148,33 @@ void codegen_str(std::string out_fname, std::string struct_name) {
   else
     c_code += HEAD_CSTRUCT;
 
-  size = absyn_tree.size();
+  size = ast.size();
 
   // suppress -Werror=maybe-uninitialized warnings.
   node_v1 = node_v2 = node_v3 = dead_ins;
 
   for (i=0; i<size; i++) {
-    node   = absyn_tree[i];
+    node   = ast[i];
     node_v = node.node_v;
     ops    = node.arg_num;
 
     if (ops == 1) {
-      id1     = absyn_tree[i+1].id;
-      node_v1 = absyn_tree[i+1].node_v;
+      id1     = ast[i+1].id;
+      node_v1 = ast[i+1].node_v;
     }
     else if (ops == 2) {
-      id1     = absyn_tree[i+1].id;
-      id2     = absyn_tree[i+2].id;
-      node_v1 = absyn_tree[i+1].node_v;
-      node_v2 = absyn_tree[i+2].node_v;
+      id1     = ast[i+1].id;
+      id2     = ast[i+2].id;
+      node_v1 = ast[i+1].node_v;
+      node_v2 = ast[i+2].node_v;
     }
     else if (ops == 3) {
-      id1     = absyn_tree[i+1].id;
-      id2     = absyn_tree[i+2].id;
-      id3     = absyn_tree[i+3].id;
-      node_v1 = absyn_tree[i+1].node_v;
-      node_v2 = absyn_tree[i+2].node_v;
-      node_v3 = absyn_tree[i+3].node_v;
+      id1     = ast[i+1].id;
+      id2     = ast[i+2].id;
+      id3     = ast[i+3].id;
+      node_v1 = ast[i+1].node_v;
+      node_v2 = ast[i+2].node_v;
+      node_v3 = ast[i+3].node_v;
     }
 
     /* ALU instructions: */

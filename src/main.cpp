@@ -1,9 +1,4 @@
-/*
-  Main routine invoking different compiler stages.
-*/
 #include "ast.h"
-#include "symtab.h"
-#include "lexer.h"
 #include "parser.h"
 #include "typechecker.h"
 #include "optimizer.h"
@@ -14,7 +9,7 @@ int main(int argc, char **argv) {
   std::vector<std::string> filenames;
   std::vector<std::string> out_filenames;
   std::vector<std::string> struct_names;
-  // Parse program arguments
+
   parse_opts(argc, argv, filenames, out_filenames, struct_names);
 
   std::string filename, out_filename = "", struct_name = "";
@@ -42,7 +37,6 @@ int main(int argc, char **argv) {
     ss.clear();
     ifs.close();
 
-    lexer();
     parser();
     typechecker();
 
@@ -55,11 +49,8 @@ int main(int argc, char **argv) {
       codegen(out_filename);
 
     bytecode.clear();
-    dealloc_absyn_tree();
-    dealloc_symtab();
-
+    dealloc_ast();
   }
 
   return 0;
-
 }

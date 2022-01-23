@@ -8,7 +8,6 @@ std::string bytecode;
 uint optimize = 0;
 uint cmacro   = 0;
 
-// Defined in `utils.h`
 void error() {
   std::cout<<std::endl;
   exit(1);
@@ -58,25 +57,20 @@ int stof_w(const std::string& str, std::size_t* idx) {
   }
 }
 
-std::string err_getline(std::string id, uint line_num, uint col_num) {
-  if (col_num > id.size()+2)
-    col_num -= id.size()+2;
-  else
-    col_num -= id.size();
+std::string err_getline(std::string id, size_t line_num, size_t col_num) {
+  col_num -= id.size()+1;
 
   std::string line_num_str = std::to_string(line_num);
-  std::string col_num_str  = std::to_string(col_num);
-  uint line_num_size       = line_num_str.size();
 
   std::string s, line;
-  std::istringstream iss(bytecode);
 
+  std::istringstream iss(bytecode);
   for (uint i=0; i < line_num && std::getline(iss, line); i++)
     ;
 
   s = "\n   " + line_num_str + " | " + line + "\n   " +
-      std::string(line_num_size, ' ') + " | " + std::string(col_num, ' ') +
-      "^" + std::string(id.size(), '~');
+      std::string(line_num_str.size(), ' ') + " | " + std::string(col_num, ' ')
+      + "^" + std::string(id.size()-1, '~');
   return s;
 }
 
@@ -175,5 +169,4 @@ void parse_opts(int argc, char **argv,
   else if (struct_names.size() && struct_names.size() != files.size())
     error(usage(argv), "\n\nerror: the amount of -c <arg> provided must be"
           " equal to the amount of <sources> provided");
-
 }

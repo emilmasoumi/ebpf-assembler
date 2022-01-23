@@ -1,9 +1,8 @@
 #include "ast.h"
 
-/* Abstract syntax tree as an m-ary tree. */
-std::vector<struct ast_t> absyn_tree;
+std::vector<ast_t> ast;
 
-std::string pp_subtype(Node node) {
+std::string pp_node(Node node) {
   if      (node == regs)       return "regs";
   else if (node == dirs)       return "directive";
   else if (node == imm_int)    return "imm_int";
@@ -123,23 +122,31 @@ std::string pp_subtype(Node node) {
   else if (node == jslt32)     return "jslt32";
   else if (node == jsle32)     return "jsle32";
   else if (node == zext)       return "zext";
-  return "type not found";
+  return "node type not found";
+}
+
+std::string pp_type(Type ty) {
+  if      (ty == instr) return "instruction";
+  else if (ty == ident) return "identifier";
+  else if (ty == direc) return "directive";
+  else if (ty == imm)   return "immediate";
+  else if (ty == reg)   return "register";
+  else                  return "unidentified type";
 }
 
 void pp_ast(void) {
+  std::string type, id, subtype;
   std::cout << "--------\nPrinting the abstract syntax tree:\n--------"
             << std::endl;
-  std::string type, id, subtype;
-  for (uint i=0; i<absyn_tree.size(); i++) {
-    type    = pp_type(absyn_tree[i].type);
-    id      = absyn_tree[i].id;
-    subtype = pp_subtype(absyn_tree[i].node_v);
+  for (uint i=0; i<ast.size(); i++) {
+    type    = pp_type(ast[i].type);
+    id      = ast[i].id;
+    subtype = pp_node(ast[i].node_v);
     std::cout << std::setw(7) << std::setfill('0') << i+1 << ": " << id
               << pp_spaces(id, 12) << " " << type << pp_spaces(type, 16)
               << subtype;
-    if (absyn_tree[i].type == instr)
-      std::cout << pp_spaces(id, 16) << "off="
-                << absyn_tree[i].off;
+    if (ast[i].type == instr)
+      std::cout << pp_spaces(id, 16) << "off=" << ast[i].off;
     std::cout << std::endl;
   }
 }
