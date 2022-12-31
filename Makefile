@@ -1,5 +1,7 @@
 CC = gcc
 CXX = g++
+ASAN = -fsanitize=address -fsanitize=pointer-compare -fsanitize=leak \
+-fsanitize=undefined
 CFLAGS = -std=c99 -O2 -Wall -Wextra -pedantic-errors -Wshadow \
 -Wstrict-aliasing -Werror -Wunreachable-code -Wno-long-long
 CXXFLAGS = -std=c++17 -fconcepts -Wshadow -Wstrict-aliasing -Werror \

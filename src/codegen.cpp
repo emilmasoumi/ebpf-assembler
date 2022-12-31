@@ -4,7 +4,7 @@
 #define HEAD_CSTRUCT "static struct bpf_insn prog[1000000] = {\n"
 #define HEAD_FST_CSTRUCT "static struct bpf_insn "
 #define HEAD_SND_CSTRUCT "[1000000] = {\n"
-#define TAIL_CSTRUCT "\n};\n"
+#define TAIL_CSTRUCT "};\n"
 
 #define MAX_INSNS 1000000
 

@@ -39,8 +39,8 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // Get amount of bytes in the object code.
-  int size;
+  // Get the amount of bytes in the object code.
+  long int size;
   struct stat st;
   stat(fname, &st);
   size = st.st_size;

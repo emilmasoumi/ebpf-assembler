@@ -241,7 +241,7 @@ static inline bool seperator() {
 }
 
 static inline void comment() {
-  while (next_sym() != '\n')
+  while(!some_eq(next_sym(), '\n', '\0'))
     ;;
 }
 
@@ -300,7 +300,7 @@ static inline void statement() {
     comment();
   else
     next_sym();
-  
+
   clear();
   statement();
 }
