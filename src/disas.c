@@ -42,7 +42,10 @@ int main(int argc, char **argv) {
   // Get the amount of bytes in the object code.
   long int size;
   struct stat st;
-  stat(fname, &st);
+  if (stat(fname, &st) < 0) {
+    fprintf(stderr, "error: stat() failed: %s\n", strerror(errno));
+    return 1;
+  }
   size = st.st_size;
 
   unsigned char *objcode =
@@ -56,8 +59,8 @@ int main(int argc, char **argv) {
   }
   close(fd);
 
-  if (size < 8) {
-    printf("error: eBPF object code cannot be less than 8 bytes\n");
+  if (size < 1 || ((size) % 8)) {
+    printf("error: the object code has a distorted encoding size\n");
     return 1;
   }
 

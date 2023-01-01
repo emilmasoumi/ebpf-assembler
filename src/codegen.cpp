@@ -1129,9 +1129,9 @@ void codegen(std::string out_fname) {
   int fd = open(out_fname.c_str(),
                 O_CREAT | O_WRONLY | O_TRUNC, S_IREAD | S_IWUSR);
   if (fd == -1)
-    error("open() failed on ", out_fname.c_str(), " with log:\n",
-          strerror(errno));
-  write(fd, prog, prog_len * sizeof(struct bpf_insn));
+    error("open() failed on `", out_fname.c_str(), "`: ", strerror(errno));
+  if(write(fd, prog, prog_len * sizeof(struct bpf_insn)) == -1)
+    error("write() failed on `", out_fname.c_str(), "`: ", strerror(errno));
   close(fd);
 
 }
@@ -2162,7 +2162,8 @@ void codegen_str(std::string out_fname, std::string struct_name) {
   std::ofstream ofs;
   ofs.open(out_fname);
   if (!ofs.is_open())
-    error("error: std::ofstream::open() failed opening file: ", out_fname);
+    error("error: std::ofstream::open() failed opening file: `", out_fname,
+          "`: ", strerror(errno));
   ofs<<c_code;
   ofs.close();
 }

@@ -26,7 +26,8 @@ int main(int argc, char **argv) {
       out_filename = filename.substr(0, filename.size()-2);
 
     if (access(filename.c_str(), F_OK) != 0)
-      error("error: file ``", filename, "`` cannot be accessed");
+      error("error: file `", filename, "` cannot be accessed: ",
+            strerror(errno));
 
     std::ifstream ifs(filename);
     std::stringstream ss;
