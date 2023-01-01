@@ -152,11 +152,11 @@ void parse_opts(int argc, char **argv,
   };
 
   for (int i=optind; i<argc; i++) {
-    if (!ends_with(argv[i], ".s"))
-      error("error: unrecognized file extension for ``", argv[i],
-            "`` expected a file extension of format ``.s``");
     if (strlen(argv[i]) < 3)
       error("error: file name too short: ", argv[i]);
+    else if (!ends_with(argv[i], ".s"))
+      error("error: unrecognized file extension for `", argv[i],
+            "` expected a file extension of format `.s`");
     files.push_back(argv[i]);
   }
 
