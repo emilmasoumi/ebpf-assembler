@@ -1,12 +1,13 @@
 #include <../headers/bpf_insn.h>
 #include "codegen.h"
 
-#define HEAD_CSTRUCT "static struct bpf_insn prog[1000000] = {\n"
-#define HEAD_FST_CSTRUCT "static struct bpf_insn "
-#define HEAD_SND_CSTRUCT "[1000000] = {\n"
-#define TAIL_CSTRUCT "};\n"
-
-#define MAX_INSNS 1000000
+static inline uint max_insns() {
+  uint max_insns = 0;
+  for (ast_t node : ast)
+    if (node.type == instr)
+      max_insns++;
+  return max_insns;
+}
 
 static inline __u8 map_reg(ident_t id) {
   if      (id == "r0")  return BPF_REG_0;
@@ -59,12 +60,11 @@ static inline std::string get_reg_str(Node n, ident_t id) {
 }
 
 void codegen(std::string out_fname) {
-
-  uint size;
-  ast_t node;
-  Node node_v, node_v1, node_v2, node_v3;
+  uint    size;
+  ast_t   node;
+  Node    node_v, node_v1, node_v2, node_v3;
   ident_t id1, id2, id3;
-  uint i, prog_len, ops;
+  uint    i, prog_len, ops;
   // errors reported by valgrind are subdued when assigning a smaller
   // ``prog`` array size.
   struct bpf_insn prog[1000000];
@@ -99,1031 +99,1183 @@ void codegen(std::string out_fname) {
       node_v3 = ast[i+3].node_v;
     }
 
+    switch (node_v) {
     /* ALU instructions: */
     /* 64-bit: */
     /* add dst src|imm */
-    if (node_v == add) {
+    case add:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_ADD, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_ADD,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_ADD, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_ADD,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* sub dst src|imm */
-    else if (node_v == sub) {
+    case sub:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_SUB, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_SUB,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_SUB, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_SUB,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* mul dst src|imm */
-    else if (node_v == mul) {
+    case mul:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_MUL, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_MUL,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_MUL, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_MUL,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* div dst src|imm */
-    else if (node_v == div_ins) {
+    case div_ins:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_DIV, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_DIV,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_DIV, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_DIV,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* or dst src|imm */
-    else if (node_v == or_ins) {
+    case or_ins:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_OR, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_OR,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_OR, get_reg(node_v1, id1),
-                                                  get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_OR,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* and dst src|imm */
-    else if (node_v == and_ins) {
+    case and_ins:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_AND, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_AND,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_AND, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_AND,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* lsh dst src|imm */
-    else if (node_v == lsh) {
+    case lsh:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_LSH, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_LSH,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_LSH, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_LSH,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* rsh dst src|imm */
-    else if (node_v == rsh) {
+    case rsh:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_RSH, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_RSH,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_RSH, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_RSH,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* neg dst src|imm */
-    else if (node_v == neg) {
+    case neg:
       if (node_v2 == imm_int)
         prog[prog_len++] = BPF_ALU64_IMM(BPF_NEG, get_reg(node_v1, id1), 0);
-    }
+    break;
 
     /* mod dst src|imm */
-    else if (node_v == mod) {
+    case mod:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_MOD, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_MOD,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_MOD, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_MOD,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* xor dst src|imm */
-    else if (node_v == xor_ins) {
+    case xor_ins:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_XOR, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_XOR,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_XOR, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_XOR,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* mov dst src|imm */
-    else if (node_v == mov) {
+    case mov:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_MOV, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_MOV,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_MOV, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_MOV,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* arsh dst src|imm */
-    else if (node_v == arsh) {
+    case arsh:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU64_IMM(BPF_ARSH, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU64_IMM(BPF_ARSH,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU64_REG(BPF_ARSH, get_reg(node_v1, id1),
-                                                    get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU64_REG(BPF_ARSH,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* 32-bit: */
     /* add32 dst src|imm */
-    if (node_v == add32) {
+    case add32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_ADD, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_ADD,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_ADD, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_ADD,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* sub32 dst src|imm */
-    else if (node_v == sub32) {
+    case sub32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_SUB, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_SUB,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_SUB, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_SUB,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* mul32 dst src|imm */
-    else if (node_v == mul32) {
+    case mul32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_MUL, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_MUL,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_MUL, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_MUL,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* div32 dst src|imm */
-    else if (node_v == div32) {
+    case div32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_DIV, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_DIV,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_DIV, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_DIV,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* or32 dst src|imm */
-    else if (node_v == or32) {
+    case or32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_OR, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_OR,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_OR, get_reg(node_v1, id1),
-                                                  get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_OR,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* and32 dst src|imm */
-    else if (node_v == and32) {
+    case and32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_AND, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_AND,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_AND, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_AND,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* lsh32 dst src|imm */
-    else if (node_v == lsh32) {
+    case lsh32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_LSH, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_LSH,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_LSH, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_LSH,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* rsh32 dst src|imm */
-    else if (node_v == rsh32) {
+    case rsh32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_RSH, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_RSH,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_RSH, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_RSH,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* neg32 dst */
-    else if (node_v == neg32) {
+    case neg32:
       if (node_v2 == imm_int)
         prog[prog_len++] = BPF_ALU32_IMM(BPF_NEG, get_reg(node_v1, id1), 0);
-    }
+    break;
 
     /* mod32 dst src|imm */
-    else if (node_v == mod32) {
+    case mod32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_MOD, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_MOD,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_MOD, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_MOD,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* xor32 dst src|imm */
-    else if (node_v == xor32) {
+    case xor32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_XOR, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_XOR,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_XOR, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_XOR,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* mov32 dst src|imm */
-    else if (node_v == mov32) {
+    case mov32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_MOV, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_MOV,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_MOV, get_reg(node_v1, id1),
-                                                   get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_MOV,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* arsh32 dst src|imm */
-    else if (node_v == arsh32) {
+    case arsh32:
       if (node_v2 == imm_int)
-        prog[prog_len++] = BPF_ALU32_IMM(BPF_ARSH, get_reg(node_v1, id1),
+        prog[prog_len++] = BPF_ALU32_IMM(BPF_ARSH,
+                                         get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
-         prog[prog_len++] = BPF_ALU32_REG(BPF_ARSH, get_reg(node_v1, id1),
-                                                    get_reg(node_v2, id2));
-    }
+         prog[prog_len++] = BPF_ALU32_REG(BPF_ARSH,
+                                          get_reg(node_v1, id1),
+                                          get_reg(node_v2, id2));
+    break;
 
     /* mov32 dst src|imm */
-    else if (node_v == mov32) {
+    /*
+    case mov32:
       if (node_v2 == imm_int)
         prog[prog_len++] = BPF_MOV32_IMM(get_reg(node_v1, id1),
                                          get_val<int>(node_v2, id2));
       else
         prog[prog_len++] = BPF_MOV32_REG(get_reg(node_v1, id1),
                                          get_reg(node_v2, id2));
-    }
+    break;
+    */
 
     /* Endianess conversion (Byteswap) instructions: */
     /* le16 dst */
-    else if (node_v == le16) {
+    case le16:
       prog[prog_len++] = BPF_ENDIAN(BPF_TO_LE, get_reg(node_v1, id1), 16);
-    }
+    break;
 
     /* le32 dst */
-    else if (node_v == le32) {
+    case le32:
       prog[prog_len++] = BPF_ENDIAN(BPF_TO_LE, get_reg(node_v1, id1), 32);
-    }
+    break;
 
     /* le64 dst */
-    else if (node_v == le64) {
+    case le64:
       prog[prog_len++] = BPF_ENDIAN(BPF_TO_LE, get_reg(node_v1, id1), 64);
-    }
+    break;
 
     /* be16 dst */
-    else if (node_v == be16) {
+    case be16:
       prog[prog_len++] = BPF_ENDIAN(BPF_TO_BE, get_reg(node_v1, id1), 16);
-    }
+    break;
 
     /* be32 dst */
-    else if (node_v == be32) {
+    case be32:
       prog[prog_len++] = BPF_ENDIAN(BPF_TO_BE, get_reg(node_v1, id1), 32);
-    }
+    break;
 
     /* be64 dst */
-    else if (node_v == be64) {
+    case be64:
       prog[prog_len++] = BPF_ENDIAN(BPF_TO_BE, get_reg(node_v1, id1), 64);
-    }
+    break;
 
     /* Atomic operations: */
     /* addx16 dst src off */
-    else if (node_v == addx16) {
+    case addx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_ADD,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* addx32 dst src off */
-    else if (node_v == addx32) {
+    case addx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_ADD,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* addx64 dst src off */
-    else if (node_v == addx64) {
+    case addx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_ADD,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* andx16 dst src off */
-    else if (node_v == andx16) {
+    case andx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_AND,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* andx32 dst src off */
-    else if (node_v == andx32) {
+    case andx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_AND,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* andx64 dst src off */
-    else if (node_v == andx64) {
+    case andx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_AND,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* orx16 dst src off */
-    else if (node_v == orx16) {
+    case orx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_OR,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* orx32 dst src off */
-    else if (node_v == orx32) {
+    case orx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_OR,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* orx64 dst src off */
-    else if (node_v == orx64) {
+    case orx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_OR,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xorx16 dst src off */
-    else if (node_v == xorx16) {
+    case xorx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_XOR,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xorx32 dst src off */
-    else if (node_v == xorx32) {
+    case xorx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_XOR,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xorx64 dst src off */
-    else if (node_v == xorx64) {
+    case xorx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_XOR,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* addfx16 dst src off */
-    else if (node_v == addfx16) {
+    case addfx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_ADD | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* addfx32 dst src off */
-    else if (node_v == addfx32) {
+    case addfx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_ADD | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* addfx64 dst src off */
-    else if (node_v == addfx64) {
+    case addfx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_ADD | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* andfx16 dst src off */
-    else if (node_v == andfx16) {
+    case andfx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_AND | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* andfx32 dst src off */
-    else if (node_v == andfx32) {
+    case andfx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_AND | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* andfx64 dst src off */
-    else if (node_v == andfx64) {
+    case andfx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_AND | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* orfx16 dst src off */
-    else if (node_v == orfx16) {
+    case orfx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_OR | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* orfx32 dst src off */
-    else if (node_v == orfx32) {
+    case orfx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_OR | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* orfx64 dst src off */
-    else if (node_v == orfx64) {
+    case orfx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_OR | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xorfx16 dst src off */
-    else if (node_v == xorfx16) {
+    case xorfx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_XOR | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xorfx32 dst src off */
-    else if (node_v == xorfx32) {
+    case xorfx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_XOR | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xorfx64 dst src off */
-    else if (node_v == xorfx64) {
+    case xorfx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_XOR | BPF_FETCH,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xchgx16 dst src off */
-    else if (node_v == xchgx16) {
+    case xchgx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_XCHG,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xchgx32 dst src off */
-    else if (node_v == xchgx32) {
+    case xchgx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_XCHG,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* xchgx64 dst src off */
-    else if (node_v == xchgx64) {
+    case xchgx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_XCHG,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* cmpxchgx16 dst src off */
-    else if (node_v == cmpxchgx16) {
+    case cmpxchgx16:
       prog[prog_len++] = BPF_ATOMIC_OP(16, BPF_CMPXCHG,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* cmpxchgx32 dst src off */
-    else if (node_v == cmpxchgx32) {
+    case cmpxchgx32:
       prog[prog_len++] = BPF_ATOMIC_OP(32, BPF_CMPXCHG,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* cmpxchgx64 dst src off */
-    else if (node_v == cmpxchgx64) {
+    case cmpxchgx64:
       prog[prog_len++] = BPF_ATOMIC_OP(64, BPF_CMPXCHG,
                                        get_reg(node_v1, id1),
                                        get_reg(node_v2, id2),
                                        (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* ldmapfd dst imm */
-    else if (node_v == ldmapfd) {
+    case ldmapfd:
       prog[prog_len++] = BPF_LD_MAP_FD(get_reg(node_v1, id1),
                                        get_val<int>(node_v2, id2));
-    }
+    break;
 
     /* ld64 dst imm */
-    else if (node_v == ld64) {
+    case ld64:
       prog[prog_len++] = BPF_LD_IMM64(get_reg(node_v1, id1),
                                       get_val<int>(node_v2, id2));
-    }
+    break;
 
     /* ldabs8 imm */
-    else if (node_v == ldabs8) {
+    case ldabs8:
       prog[prog_len++] = BPF_LD_ABS(8, get_val<int>(node_v1, id1));
-    }
+    break;
 
     /* ldabs16 imm */
-    else if (node_v == ldabs16) {
+    case ldabs16:
       prog[prog_len++] = BPF_LD_ABS(16, get_val<int>(node_v1, id1));
-    }
+    break;
 
     /* ldabs32 imm */
-    else if (node_v == ldabs32) {
+    case ldabs32:
       prog[prog_len++] = BPF_LD_ABS(32, get_val<int>(node_v1, id1));
-    }
+    break;
 
     /* ldabs64 imm */
-    else if (node_v == ldabs64) {
+    case ldabs64:
       prog[prog_len++] = BPF_LD_ABS(64, get_val<int>(node_v1, id1));
-    }
+    break;
 
     /* ldind8 src imm */
-    else if (node_v == ldind8) {
+    case ldind8:
       prog[prog_len++] =
         BPF_LD_IND(8, get_reg(node_v1, id1), get_val<int>(node_v2, id2));
-    }
+    break;
 
     /* ldind16 src imm */
-    else if (node_v == ldind16) {
+    case ldind16:
       prog[prog_len++] =
         BPF_LD_IND(16, get_reg(node_v1, id1), get_val<int>(node_v2, id2));
-    }
-
+    break;
 
     /* ldind32 src imm */
-    else if (node_v == ldind32) {
+    case ldind32:
       prog[prog_len++] =
         BPF_LD_IND(32, get_reg(node_v1, id1), get_val<int>(node_v2, id2));
-    }
-
+    break;
 
     /* ldind64 src imm */
-    else if (node_v == ldind64) {
+    case ldind64:
       prog[prog_len++] =
         BPF_LD_IND(64, get_reg(node_v1, id1), get_val<int>(node_v2, id2));
-    }
-
+    break;
 
     /* ldx8 dst src off */
-    else if (node_v == ldx8) {
+    case ldx8:
       prog[prog_len++] =
-        BPF_LDX_MEM(8, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_LDX_MEM(8,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* ldx16 dst src off */
-    else if (node_v == ldx16) {
+    case ldx16:
       prog[prog_len++] =
-        BPF_LDX_MEM(16, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_LDX_MEM(16,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* ldx32 dst src off */
-    else if (node_v == ldx32) {
+    case ldx32:
       prog[prog_len++] =
-        BPF_LDX_MEM(32, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_LDX_MEM(32,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* ldx64 dst src off */
-    else if (node_v == ldx64) {
+    case ldx64:
       prog[prog_len++] =
-        BPF_LDX_MEM(64, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_LDX_MEM(64,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* st8 dst off imm */
-    else if (node_v == st8) {
+    case st8:
       prog[prog_len++] =
-        BPF_ST_MEM(8, get_reg(node_v1, id1), (__s16)get_val<int>(node_v2, id2),
-                   get_val<int>(node_v2, id2));
-    }
+        BPF_ST_MEM(8,
+                   get_reg(node_v1, id1),
+                   (__s16)get_val<int>(node_v2, id2),
+                   get_val<int>(node_v3, id3));
+    break;
 
     /* st16 dst off imm */
-    else if (node_v == st16) {
+    case st16:
       prog[prog_len++] =
-        BPF_ST_MEM(16, get_reg(node_v1, id1), (__s16)get_val<int>(node_v2, id2),
-                   get_val<int>(node_v2, id2));
-    }
+        BPF_ST_MEM(16,
+                   get_reg(node_v1, id1),
+                   (__s16)get_val<int>(node_v2, id2),
+                   get_val<int>(node_v3, id3));
+    break;
 
     /* st32 dst off imm */
-    else if (node_v == st32) {
+    case st32:
       prog[prog_len++] =
-        BPF_ST_MEM(32, get_reg(node_v1, id1), (__s16)get_val<int>(node_v2, id2),
-                   get_val<int>(node_v2, id2));
-    }
+        BPF_ST_MEM(32,
+                   get_reg(node_v1, id1),
+                   (__s16)get_val<int>(node_v2, id2),
+                   get_val<int>(node_v3, id3));
+    break;
 
     /* st64 dst off imm */
-    else if (node_v == st64) {
+    case st64:
       prog[prog_len++] =
-        BPF_ST_MEM(64, get_reg(node_v1, id1), (__s16)get_val<int>(node_v2, id2),
-                   get_val<int>(node_v2, id2));
-    }
+        BPF_ST_MEM(64,
+                   get_reg(node_v1, id1),
+                   (__s16)get_val<int>(node_v2, id2),
+                   get_val<int>(node_v3, id3));
+    break;
 
     /* stx8 dst src off */
-    else if (node_v == stx8) {
+    case stx8:
       prog[prog_len++] =
-        BPF_STX_MEM(8, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_MEM(8,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* stx16 dst src off */
-    else if (node_v == stx16) {
+    case stx16:
       prog[prog_len++] =
-        BPF_STX_MEM(16, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_MEM(16,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* stx32 dst src off */
-    else if (node_v == stx32) {
+    case stx32:
       prog[prog_len++] =
-        BPF_STX_MEM(32, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_MEM(32,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* stx64 dst src off */
-    else if (node_v == stx64) {
+    case stx64:
       prog[prog_len++] =
-        BPF_STX_MEM(64, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_MEM(64,
+                    get_reg(node_v1, id1),
+                    get_reg(node_v2, id2),
                     (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* stxx8 dst src off */
-    else if (node_v == stxx8) {
+    case stxx8:
       prog[prog_len++] =
-        BPF_STX_XADD(8, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_XADD(8,
+                     get_reg(node_v1, id1),
+                     get_reg(node_v2, id2),
                      (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* stxx16 dst src off */
-    else if (node_v == stxx16) {
+    case stxx16:
       prog[prog_len++] =
-        BPF_STX_XADD(16, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_XADD(16,
+                     get_reg(node_v1, id1),
+                     get_reg(node_v2, id2),
                      (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* stxx32 dst src off */
-    else if (node_v == stxx32) {
+    case stxx32:
       prog[prog_len++] =
-        BPF_STX_XADD(32, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_XADD(32,
+                     get_reg(node_v1, id1),
+                     get_reg(node_v2, id2),
                      (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* stxx64 dst src off */
-    else if (node_v == stxx64) {
+    case stxx64:
       prog[prog_len++] =
-        BPF_STX_XADD(64, get_reg(node_v1, id1), get_reg(node_v2, id2),
+        BPF_STX_XADD(64,
+                     get_reg(node_v1, id1),
+                     get_reg(node_v2, id2),
                      (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* Branch instructions: */
     /* 64-bit: */
 
     /* ja off */
-    else if (node_v == ja) {
+    case ja:
       prog[prog_len++] = BPF_JMP_A((__s16)get_val<int>(node_v1, id1));
-    }
+    break;
 
     /* jeq dst src|imm off */
-    else if (node_v == jeq) {
+    case jeq:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JEQ, get_reg(node_v1, id1),
+           BPF_JMP_IMM(BPF_JEQ,
+                       get_reg(node_v1, id1),
                        get_val<int>(node_v2, id2),
                        (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP_REG(BPF_JEQ, get_reg(node_v1, id1), get_reg(node_v2, id2),
-                      (__s16)get_val<int>(node_v3, id3));
-    }
-
-    /* jgt dst src|imm off */
-    else if (node_v == jgt) {
-      if (node_v2 == imm_int)
-        prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JGT, get_reg(node_v1, id1),
-                       get_val<int>(node_v2, id2),
-                       (__s16)get_val<int>(node_v3, id3));
-      else
-        prog[prog_len++] =
-          BPF_JMP_REG(BPF_JGT, get_reg(node_v1, id1), get_reg(node_v2, id2),
-                      (__s16)get_val<int>(node_v3, id3));
-    }
-
-    /* jge dst src|imm off */
-    else if (node_v == jge) {
-      if (node_v2 == imm_int)
-        prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JGE, get_reg(node_v1, id1),
-                       get_val<int>(node_v2, id2),
-                       (__s16)get_val<int>(node_v3, id3));
-      else
-        prog[prog_len++] =
-          BPF_JMP_REG(BPF_JGE, get_reg(node_v1, id1), get_reg(node_v2, id2),
-                      (__s16)get_val<int>(node_v3, id3));
-    }
-
-    /* jlt dst src|imm off */
-    else if (node_v == jlt) {
-      if (node_v2 == imm_int)
-        prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JLT, get_reg(node_v1, id1),
-                       get_val<int>(node_v2, id2),
-                       (__s16)get_val<int>(node_v3, id3));
-      else
-        prog[prog_len++] =
-          BPF_JMP_REG(BPF_JLT, get_reg(node_v1, id1), get_reg(node_v2, id2),
-                      (__s16)get_val<int>(node_v3, id3));
-    }
-
-    /* jle dst src|imm off */
-    else if (node_v == jle) {
-      if (node_v2 == imm_int)
-        prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JLE, get_reg(node_v1, id1),
-                       get_val<int>(node_v2, id2),
-                       (__s16)get_val<int>(node_v3, id3));
-      else
-        prog[prog_len++] =
-          BPF_JMP_REG(BPF_JLE, get_reg(node_v1, id1),
+          BPF_JMP_REG(BPF_JEQ,
+                      get_reg(node_v1, id1),
                       get_reg(node_v2, id2),
                       (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
+
+    /* jgt dst src|imm off */
+    case jgt:
+      if (node_v2 == imm_int)
+        prog[prog_len++] =
+           BPF_JMP_IMM(BPF_JGT,
+                       get_reg(node_v1, id1),
+                       get_val<int>(node_v2, id2),
+                       (__s16)get_val<int>(node_v3, id3));
+      else
+        prog[prog_len++] =
+          BPF_JMP_REG(BPF_JGT,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
+                      (__s16)get_val<int>(node_v3, id3));
+    break;
+
+    /* jge dst src|imm off */
+    case jge:
+      if (node_v2 == imm_int)
+        prog[prog_len++] =
+           BPF_JMP_IMM(BPF_JGE,
+                       get_reg(node_v1, id1),
+                       get_val<int>(node_v2, id2),
+                       (__s16)get_val<int>(node_v3, id3));
+      else
+        prog[prog_len++] =
+          BPF_JMP_REG(BPF_JGE,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
+                      (__s16)get_val<int>(node_v3, id3));
+    break;
+
+    /* jlt dst src|imm off */
+    case jlt:
+      if (node_v2 == imm_int)
+        prog[prog_len++] =
+           BPF_JMP_IMM(BPF_JLT,
+                       get_reg(node_v1, id1),
+                       get_val<int>(node_v2, id2),
+                       (__s16)get_val<int>(node_v3, id3));
+      else
+        prog[prog_len++] =
+          BPF_JMP_REG(BPF_JLT,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
+                      (__s16)get_val<int>(node_v3, id3));
+    break;
+
+    /* jle dst src|imm off */
+    case jle:
+      if (node_v2 == imm_int)
+        prog[prog_len++] =
+           BPF_JMP_IMM(BPF_JLE,
+                       get_reg(node_v1, id1),
+                       get_val<int>(node_v2, id2),
+                       (__s16)get_val<int>(node_v3, id3));
+      else
+        prog[prog_len++] =
+          BPF_JMP_REG(BPF_JLE,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
+                      (__s16)get_val<int>(node_v3, id3));
+    break;
 
     /* jset dst src|imm off */
-    else if (node_v == jset) {
+    case jset:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JSET, get_reg(node_v1, id1),
+           BPF_JMP_IMM(BPF_JSET,
+                       get_reg(node_v1, id1),
                        get_val<int>(node_v2, id2),
                        (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP_REG(BPF_JSET, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP_REG(BPF_JSET,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
                       (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jne dst src|imm off */
-    else if (node_v == jne) {
+    case jne:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JNE, get_reg(node_v1, id1),
+           BPF_JMP_IMM(BPF_JNE,
+                       get_reg(node_v1, id1),
                        get_val<int>(node_v2, id2),
                        (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP_REG(BPF_JNE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP_REG(BPF_JNE,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
                       (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jsgt dst src|imm off */
-    else if (node_v == jsgt) {
+    case jsgt:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JSGT, get_reg(node_v1, id1),
+           BPF_JMP_IMM(BPF_JSGT,
+                       get_reg(node_v1, id1),
                        get_val<int>(node_v2, id2),
                        (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP_REG(BPF_JSGT, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP_REG(BPF_JSGT,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
                       (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jsge dst src|imm off */
-    else if (node_v == jsge) {
+    case jsge:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JSGE, get_reg(node_v1, id1),
+           BPF_JMP_IMM(BPF_JSGE,
+                       get_reg(node_v1, id1),
                        get_val<int>(node_v2, id2),
                        (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP_REG(BPF_JSGE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP_REG(BPF_JSGE,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
                       (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jslt dst src|imm off */
-    else if (node_v == jslt) {
+    case jslt:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JSLT, get_reg(node_v1, id1),
+           BPF_JMP_IMM(BPF_JSLT,
+                       get_reg(node_v1, id1),
                        get_val<int>(node_v2, id2),
                        (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP_REG(BPF_JSLT, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP_REG(BPF_JSLT,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
                       (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jsle dst src|imm off */
-    else if (node_v == jsle) {
+    case jsle:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP_IMM(BPF_JSLE, get_reg(node_v1, id1),
+           BPF_JMP_IMM(BPF_JSLE,
+                       get_reg(node_v1, id1),
                        get_val<int>(node_v2, id2),
                        (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP_REG(BPF_JSLE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP_REG(BPF_JSLE,
+                      get_reg(node_v1, id1),
+                      get_reg(node_v2, id2),
                       (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* call imm */
-    else if (node_v == call) {
+    case call:
       error("error: call: instruction not yet supported.");
-    }
+    break;
 
     /* rel imm */
-    else if (node_v == rel) {
+    case rel:
       prog[prog_len++] = BPF_CALL_REL(get_val<int>(node_v1, id1));
-    }
+    break;
 
     /* exit */
-    else if (node_v == exit_ins) {
+    case exit_ins:
       prog[prog_len++] = BPF_EXIT_INSN();
-    }
+    break;
 
     /* 32-bit: */
 
     /* jeq32 dst src|imm off */
-    else if (node_v == jeq32) {
+    case jeq32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JEQ, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JEQ,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JEQ, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JEQ,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jgt32 dst src|imm off */
-    else if (node_v == jgt32) {
+    case jgt32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JGT, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JGT,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JGT, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JGT,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jge32 dst src|imm off */
-    else if (node_v == jge32) {
+    case jge32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JGE, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JGE,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JGE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JGE,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jlt32 dst src|imm off */
-    else if (node_v == jlt32) {
+    case jlt32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JLT, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JLT,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JLT, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JLT,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jle32 dst src|imm off */
-    else if (node_v == jle32) {
+    case jle32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JLE, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JLE,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JLE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JLE,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jset32 dst src|imm off */
-    else if (node_v == jset32) {
+    case jset32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JSET, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JSET,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JSET, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JSET,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jne32 dst src|imm off */
-    else if (node_v == jne32) {
+    case jne32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JNE, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JNE,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JNE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JNE,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jsgt32 dst src|imm off */
-    else if (node_v == jsgt32) {
+    case jsgt32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JSGT, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JSGT,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JSGT, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JSGT,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jsge32 dst src|imm off */
-    else if (node_v == jsge32) {
+    case jsge32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JSGE, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JSGE,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JSGE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JSGE,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jslt32 dst src|imm off */
-    else if (node_v == jslt32) {
+    case jslt32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JSLT, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JSLT,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JSLT, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JSLT,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* jsle32 dst src|imm off */
-    else if (node_v == jsle32) {
+    case jsle32:
       if (node_v2 == imm_int)
         prog[prog_len++] =
-           BPF_JMP32_IMM(BPF_JSLE, get_reg(node_v1, id1),
+           BPF_JMP32_IMM(BPF_JSLE,
+                         get_reg(node_v1, id1),
                          get_val<int>(node_v2, id2),
                          (__s16)get_val<int>(node_v3, id3));
       else
         prog[prog_len++] =
-          BPF_JMP32_REG(BPF_JSLE, get_reg(node_v1, id1), get_reg(node_v2, id2),
+          BPF_JMP32_REG(BPF_JSLE,
+                        get_reg(node_v1, id1),
+                        get_reg(node_v2, id2),
                         (__s16)get_val<int>(node_v3, id3));
-    }
+    break;
 
     /* zext dst */
-    else if (node_v == zext) {
+    case zext:
       prog[prog_len++] = BPF_ZEXT_REG(get_reg(node_v1, id1));
-    }
+    break;
 
+    case regs: case imm_int:
+    break;
+
+    default:
+      error("Internal code generation error: uncovered case: ",
+            pp_node(node_v));
+    }
   }
 
   int fd = open(out_fname.c_str(),
@@ -1133,20 +1285,22 @@ void codegen(std::string out_fname) {
   if(write(fd, prog, prog_len * sizeof(struct bpf_insn)) == -1)
     error("write() failed on `", out_fname.c_str(), "`: ", strerror(errno));
   close(fd);
-
 }
 
 void codegen_str(std::string out_fname, std::string struct_name) {
-  uint size, i, ops;
-  ast_t node;
-  Node node_v, node_v1, node_v2, node_v3;
+  uint    size, i, ops;
+  ast_t   node;
+  Node    node_v, node_v1, node_v2, node_v3;
   ident_t id1, id2, id3;
+
   std::string c_code;
+  std::string struct_size = std::to_string(max_insns());
 
   if (struct_name.size())
-    c_code += HEAD_FST_CSTRUCT + struct_name + HEAD_SND_CSTRUCT;
+    c_code = "static struct bpf_insn " + struct_name + "[" +
+             struct_size + "] = {\n";
   else
-    c_code += HEAD_CSTRUCT;
+    c_code = "static struct bpf_insn prog[" + struct_size + "] = {\n";
 
   size = ast.size();
 
@@ -1177,701 +1331,718 @@ void codegen_str(std::string out_fname, std::string struct_name) {
       node_v3 = ast[i+3].node_v;
     }
 
+    switch (node_v) {
     /* ALU instructions: */
     /* 64-bit: */
     /* add dst src|imm */
-    if (node_v == add) {
+    case add:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_ADD, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_ADD, " +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_ADD, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + "),\n";
-    }
+         c_code += "BPF_ALU64_REG(BPF_ADD, " +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + "),\n";
+    break;
 
     /* sub dst src|imm */
-    else if (node_v == sub) {
+    case sub:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_SUB, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_SUB, " +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_SUB, " + get_reg_str(node_v1, id1) + ", "
+         c_code += "BPF_ALU64_REG(BPF_SUB, " +
+                   get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* mul dst src|imm */
-    else if (node_v == mul) {
+    case mul:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_MUL, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_MUL, " +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_MUL, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + "),\n";
-    }
+         c_code += "BPF_ALU64_REG(BPF_MUL, " +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + "),\n";
+    break;
 
     /* div dst src|imm */
-    else if (node_v == div_ins) {
+    case div_ins:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_DIV, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_DIV, " +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_DIV, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + "),\n";
-    }
+         c_code += "BPF_ALU64_REG(BPF_DIV, " +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + "),\n";
+    break;
 
     /* or dst src|imm */
-    else if (node_v == or_ins) {
+    case or_ins:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_OR, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_OR, "  +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_OR, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + "),\n";
-    }
+         c_code += "BPF_ALU64_REG(BPF_OR, "  +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + "),\n";
+    break;
 
     /* and dst src|imm */
-    else if (node_v == and_ins) {
+    case and_ins:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_AND, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_AND, " +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_AND, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + "),\n";
-    }
+         c_code += "BPF_ALU64_REG(BPF_AND, " +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + "),\n";
+    break;
 
     /* lsh dst src|imm */
-    else if (node_v == lsh) {
+    case lsh:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_LSH, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_LSH, " +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_LSH, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + "),\n";
-    }
+         c_code += "BPF_ALU64_REG(BPF_LSH, " +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + "),\n";
+    break;
 
     /* rsh dst src|imm */
-    else if (node_v == rsh) {
+    case rsh:
       if (node_v2 == imm_int)
-        c_code += "BPF_ALU64_IMM(BPF_RSH, " + get_reg_str(node_v1, id1) + ", "
-                  + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+        c_code += "BPF_ALU64_IMM(BPF_RSH, " +
+                  get_reg_str(node_v1, id1) + ", " +
+                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
-         c_code += "BPF_ALU64_REG(BPF_RSH, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + "),\n";
-    }
+         c_code += "BPF_ALU64_REG(BPF_RSH, " +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + "),\n";
+    break;
 
     /* neg dst src|imm */
-    else if (node_v == neg) {
-       c_code += "BPF_ALU64_REG(BPF_NEG, " + get_reg_str(node_v1, id1)
-                  + ", 0),\n";
-    }
+    case neg:
+       c_code += "BPF_ALU64_REG(BPF_NEG, " + get_reg_str(node_v1, id1) +
+                 ", 0),\n";
+    break;
 
     /* mod dst src|imm */
-    else if (node_v == mod) {
+    case mod:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU64_IMM(BPF_MOD, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU64_REG(BPF_MOD, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* xor dst src|imm */
-    else if (node_v == xor_ins) {
+    case xor_ins:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU64_IMM(BPF_XOR, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU64_REG(BPF_XOR, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* mov dst src|imm */
-    else if (node_v == mov) {
+    case mov:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU64_IMM(BPF_MOV, " + get_reg_str(node_v1, id1) + ", "
                    + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
         c_code += "BPF_ALU64_REG(BPF_MOV, " + get_reg_str(node_v1, id1) + ", "
                   + get_reg_str(node_v2, id2) + "),\n";
-     }
+     break;
 
     /* arsh dst src|imm */
-    else if (node_v == arsh) {
+    case arsh:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU64_IMM(BPF_ARSH, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU64_REG(BPF_ARSH, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* 32-bit: */
     /* add32 dst src|imm */
-    if (node_v == add32) {
+    case add32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_ADD, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_ADD, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* sub32 dst src|imm */
-    else if (node_v == sub32) {
+    case sub32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_SUB, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_SUB, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* mul32 dst src|imm */
-    else if (node_v == mul32) {
+    case mul32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_MUL, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_MUL, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* div32 dst src|imm */
-    else if (node_v == div32) {
+    case div32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_DIV, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_DIV, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* or32 dst src|imm */
-    else if (node_v == or32) {
+    case or32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_OR, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_OR, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* and32 dst src|imm */
-    else if (node_v == and32) {
+    case and32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_AND, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_AND, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* lsh32 dst src|imm */
-    else if (node_v == lsh32) {
+    case lsh32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_LSH, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_LSH, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* rsh32 dst src|imm */
-    else if (node_v == rsh32) {
+    case rsh32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_RSH, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_RSH, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* neg32 dst src|imm */
-    else if (node_v == neg32) {
+    case neg32:
        c_code += "BPF_ALU32_REG(BPF_NEG, " + get_reg_str(node_v1, id1)
                  + ", 0),\n";
-    }
+    break;
 
     /* mod32 dst src|imm */
-    else if (node_v == mod32) {
+    case mod32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_MOD, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_MOD, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* xor32 dst src|imm */
-    else if (node_v == xor32) {
+    case xor32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_XOR, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_XOR, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* mov32 dst src|imm */
-    else if (node_v == mov32) {
+    case mov32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_MOV, " + get_reg_str(node_v1, id1) + ", "
                    + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
         c_code += "BPF_ALU32_REG(BPF_MOV, " + get_reg_str(node_v1, id1) + ", "
                   + get_reg_str(node_v2, id2) + "),\n";
-     }
+     break;
 
     /* arsh32 dst src|imm */
-    else if (node_v == arsh32) {
+    case arsh32:
       if (node_v2 == imm_int)
         c_code += "BPF_ALU32_IMM(BPF_ARSH, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + "),\n";
       else
          c_code += "BPF_ALU32_REG(BPF_ARSH, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + "),\n";
-    }
+    break;
 
     /* le16 dst src|imm */
-    else if (node_v == le16) {
+    case le16:
        c_code += "BPF_ENDIAN(BPF_TO_LE, " + get_reg_str(node_v1, id1)
                  + ", 16),\n";
-    }
+    break;
 
     /* le32 dst src|imm */
-    else if (node_v == le32) {
+    case le32:
        c_code += "BPF_ENDIAN(BPF_TO_LE, " + get_reg_str(node_v1, id1)
                  + ", 32),\n";
-    }
+    break;
 
     /* le64 dst src|imm */
-    else if (node_v == le64) {
+    case le64:
        c_code += "BPF_ENDIAN(BPF_TO_LE, " + get_reg_str(node_v1, id1)
                  + ", 64),\n";
-    }
+    break;
 
     /* be16 dst src|imm */
-    else if (node_v == be16) {
+    case be16:
        c_code += "BPF_ENDIAN(BPF_TO_BE, " + get_reg_str(node_v1, id1)
                  + ", 16),\n";
-    }
+    break;
 
     /* be32 dst src|imm */
-    else if (node_v == be32) {
+    case be32:
        c_code += "BPF_ENDIAN(BPF_TO_BE, " + get_reg_str(node_v1, id1)
                  + ", 32),\n";
-    }
+    break;
 
     /* be64 dst src|imm */
-    else if (node_v == be64) {
+    case be64:
        c_code += "BPF_ENDIAN(BPF_TO_BE, " + get_reg_str(node_v1, id1)
                  + ", 64),\n";
-    }
+    break;
 
     /* addx16 dst src off */
-    else if (node_v == addx16) {
+    case addx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_ADD, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* addx32 dst src off */
-    else if (node_v == addx32) {
+    case addx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_ADD, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* addx64 dst src off */
-    else if (node_v == addx64) {
+    case addx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_ADD, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* andx16 dst src off */
-    else if (node_v == andx16) {
+    case andx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_AND, " + get_reg_str(node_v1, id1) +
                  ", " +  get_reg_str(node_v2, id2) + ", " +
-                  std::to_string((__s16)get_val<int>(node_v3, id3))  + "),\n";
-    }
+                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
+    break;
 
     /* andx32 dst src off */
-    else if (node_v == andx32) {
+    case andx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_AND, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* andx64 dst src off */
-    else if (node_v == andx64) {
+    case andx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_AND, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* orx16 dst src off */
-    else if (node_v == orx16) {
+    case orx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_OR, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
-                 std::to_string((__s16)get_val<int>(node_v3, id3))  + "),\n";
-    }
+                 std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
+    break;
 
     /* orx32 dst src off */
-    else if (node_v == orx32) {
+    case orx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_OR, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
-                 std::to_string((__s16)get_val<int>(node_v3, id3))  + "),\n";
-    }
+                 std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
+    break;
 
     /* orx64 dst src off */
-    else if (node_v == orx64) {
+    case orx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_OR, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
-                 std::to_string((__s16)get_val<int>(node_v3, id3))  + "),\n";
-    }
+                 std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
+    break;
 
     /* xorx16 dst src off */
-    else if (node_v == xorx16) {
+    case xorx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_XOR, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
-                 std::to_string((__s16)get_val<int>(node_v3, id3))  + "),\n";
-    }
+                 std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
+    break;
 
     /* xorx32 dst src off */
-    else if (node_v == xorx32) {
+    case xorx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_XOR, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* xorx64 dst src off */
-    else if (node_v == xorx64) {
+    case xorx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_XOR, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* addfx16 dst src off */
-    else if (node_v == addfx16) {
+    case addfx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_ADD | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* addfx32 dst src off */
-    else if (node_v == addfx32) {
+    case addfx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_ADD | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* addfx64 dst src off */
-    else if (node_v == addfx64) {
+    case addfx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_ADD | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* andfx16 dst src off */
-    else if (node_v == andfx16) {
+    case andfx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_AND | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* andfx32 dst src off */
-    else if (node_v == andfx32) {
+    case andfx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_AND | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* andfx64 dst src off */
-    else if (node_v == andfx64) {
+    case andfx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_AND | BPF_FETCH, " +
                   get_reg_str(node_v1, id1) + ", " +
                   get_reg_str(node_v2, id2) + ", " +
                   std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* orfx16 dst src off */
-    else if (node_v == orfx16) {
+    case orfx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_OR | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* orfx32 dst src off */
-    else if (node_v == orfx32) {
+    case orfx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_OR | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* orfx64 dst src off */
-    else if (node_v == orfx64) {
+    case orfx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_OR | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* xorfx16 dst src off */
-    else if (node_v == xorfx16) {
+    case xorfx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_XOR | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* xorfx32 dst src off */
-    else if (node_v == xorfx32) {
+    case xorfx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_XOR | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* xorfx64 dst src off */
-    else if (node_v == xorfx64) {
+    case xorfx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_XOR | BPF_FETCH, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* xchgx16 dst src off */
-    else if (node_v == xchgx16) {
+    case xchgx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_XCHG, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* xchgx32 dst src off */
-    else if (node_v == xchgx32) {
+    case xchgx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_XCHG, " +
                  get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* xchgx64 dst src off */
-    else if (node_v == xchgx64) {
+    case xchgx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_XCHG, " + get_reg_str(node_v1, id1) +
                  ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* cmpxchgx16 dst src off */
-    else if (node_v == cmpxchgx16) {
+    case cmpxchgx16:
        c_code += "BPF_ATOMIC_OP(16, BPF_CMPXCHG, " + get_reg_str(node_v1, id1)
                  + ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* cmpxchgx32 dst src off */
-    else if (node_v == cmpxchgx32) {
+    case cmpxchgx32:
        c_code += "BPF_ATOMIC_OP(32, BPF_CMPXCHG, " + get_reg_str(node_v1, id1)
                  + ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* cmpxchgx64 dst src off */
-    else if (node_v == cmpxchgx64) {
+    case cmpxchgx64:
        c_code += "BPF_ATOMIC_OP(64, BPF_CMPXCHG, " + get_reg_str(node_v1, id1)
                  + ", " + get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* ldmapfd dst imm  */
-    else if (node_v == ldmapfd) {
+    case ldmapfd:
        c_code += "BPF_LD_MAP_FD(" + get_reg_str(node_v1, id1) + ", " +
-                std::to_string(get_val<int>(node_v2, id2)) + "),\n";
-    }
+                 std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+    break;
 
     /* ld64 dst imm  */
-    else if (node_v == ld64) {
+    case ld64:
        c_code += "BPF_LD_IMM64(" + get_reg_str(node_v1, id1) + ", " +
-                std::to_string(get_val<int>(node_v2, id2)) + "),\n";
-    }
+                 std::to_string(get_val<int>(node_v2, id2)) + "),\n";
+    break;
 
     /* ldabs8 imm  */
-    else if (node_v == ldabs8) {
+    case ldabs8:
        c_code += "BPF_LD_ABS(8, " + std::to_string(get_val<int>(node_v1, id1))
                  + "),\n";
-    }
+    break;
 
     /* ldabs16 imm  */
-    else if (node_v == ldabs16) {
+    case ldabs16:
        c_code += "BPF_LD_ABS(16, " + std::to_string(get_val<int>(node_v1, id1))
                  + "),\n";
-    }
+    break;
 
     /* ldabs32 imm  */
-    else if (node_v == ldabs32) {
+    case ldabs32:
        c_code += "BPF_LD_ABS(32, " + std::to_string(get_val<int>(node_v1, id1))
                  + "),\n";
-    }
+    break;
 
     /* ldabs64 imm  */
-    else if (node_v == ldabs64) {
+    case ldabs64:
        c_code += "BPF_LD_ABS(64, " + std::to_string(get_val<int>(node_v1, id1))
                  + "),\n";
-    }
+    break;
 
     /* ldind8 src imm  */
-    else if (node_v == ldind8) {
+    case ldind8:
        c_code += "BPF_LD_IND(8, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
-    }
+    break;
 
     /* ldind16 src imm  */
-    else if (node_v == ldind16) {
+    case ldind16:
        c_code += "BPF_LD_IND(16, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
-    }
+    break;
 
     /* ldind32 src imm  */
-    else if (node_v == ldind32) {
+    case ldind32:
        c_code += "BPF_LD_IND(32, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
-    }
+    break;
 
     /* ldind64 src imm  */
-    else if (node_v == ldind64) {
+    case ldind64:
        c_code += "BPF_LD_IND(64, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string(get_val<int>(node_v2, id2)) + "),\n";
-    }
+    break;
 
     /* ldx8 dst src off  */
-    else if (node_v == ldx8) {
+    case ldx8:
        c_code += "BPF_LDX_MEM(8, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* ldx16 dst src off  */
-    else if (node_v == ldx16) {
+    case ldx16:
        c_code += "BPF_LDX_MEM(16, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* ldx32 dst src off  */
-    else if (node_v == ldx32) {
+    case ldx32:
        c_code += "BPF_LDX_MEM(32, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* ldx64 dst src off  */
-    else if (node_v == ldx64) {
+    case ldx64:
        c_code += "BPF_LDX_MEM(64, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* st8 dst off imm  */
-    else if (node_v == st8) {
+    case st8:
        c_code += "BPF_ST_MEM(8, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string((__s16)get_val<int>(node_v2, id2)) + ", " +
                  std::to_string(get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* st16 dst off imm   */
-    else if (node_v == st16) {
+    case st16:
        c_code += "BPF_ST_MEM(16, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string((__s16)get_val<int>(node_v2, id2)) + ", " +
                  std::to_string(get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* st32 dst off imm   */
-    else if (node_v == st32) {
+    case st32:
        c_code += "BPF_ST_MEM(32, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string((__s16)get_val<int>(node_v2, id2)) + ", " +
                  std::to_string(get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* st64 dst off imm   */
-    else if (node_v == st64) {
+    case st64:
        c_code += "BPF_ST_MEM(64, " + get_reg_str(node_v1, id1) + ", " +
                  std::to_string((__s16)get_val<int>(node_v2, id2)) + ", " +
                  std::to_string(get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stx8 dst src off  */
-    else if (node_v == stx8) {
+    case stx8:
        c_code += "BPF_STX_MEM(8, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stx16 dst src off  */
-    else if (node_v == stx16) {
+    case stx16:
        c_code += "BPF_STX_MEM(16, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stx32 dst src off  */
-    else if (node_v == stx32) {
+    case stx32:
        c_code += "BPF_STX_MEM(32, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stx64 dst src off  */
-    else if (node_v == stx64) {
+    case stx64:
        c_code += "BPF_STX_MEM(64, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stxx8 dst src off  */
-    else if (node_v == stxx8) {
+    case stxx8:
        c_code += "BPF_STX_XADD(8, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stxx16 dst src off  */
-    else if (node_v == stxx16) {
+    case stxx16:
        c_code += "BPF_STX_XADD(16, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stxx32 dst src off  */
-    else if (node_v == stxx32) {
+    case stxx32:
        c_code += "BPF_STX_XADD(32, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* stxx64 dst src off  */
-    else if (node_v == stxx64) {
+    case stxx64:
        c_code += "BPF_STX_XADD(64, " + get_reg_str(node_v1, id1) + ", " +
                  get_reg_str(node_v2, id2) + ", " +
                  std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* ja off */
-    else if (node_v == ja) {
+    case ja:
        c_code += "BPF_JMP_A(" +
-                 std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+                 std::to_string((__s16)get_val<int>(node_v1, id1)) + "),\n";
+    break;
 
     /* jeq dst src|imm off */
-    else if (node_v == jeq) {
+    case jeq:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JEQ, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1880,10 +2051,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JEQ, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jgt dst src|imm off */
-    else if (node_v == jgt) {
+    case jgt:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JGT, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1892,10 +2063,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JGT, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jge dst src|imm off */
-    else if (node_v == jge) {
+    case jge:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JGE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1904,10 +2075,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JGE, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jlt dst src|imm off */
-    else if (node_v == jlt) {
+    case jlt:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JLT, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1916,10 +2087,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JLT, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jle dst src|imm off */
-    else if (node_v == jle) {
+    case jle:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JLE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1928,10 +2099,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JLE, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jset dst src|imm off */
-    else if (node_v == jset) {
+    case jset:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JSET, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1940,10 +2111,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JSET, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jne dst src|imm off */
-    else if (node_v == jne) {
+    case jne:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JNE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1952,10 +2123,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JNE, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jsgt dst src|imm off */
-    else if (node_v == jsgt) {
+    case jsgt:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JSGT, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1964,10 +2135,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JSGT, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jsge dst src|imm off */
-    else if (node_v == jsge) {
+    case jsge:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JSGE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1976,10 +2147,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JSGE, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jslt dst src|imm off */
-    else if (node_v == jslt) {
+    case jslt:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JSLT, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -1988,10 +2159,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JSLT, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jsle dst src|imm off */
-    else if (node_v == jsle) {
+    case jsle:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP_IMM(BPF_JSLE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2000,26 +2171,26 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP_REG(BPF_JSLE, " + get_reg_str(node_v1, id1) + ", " +
                    get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* call imm */
-    else if (node_v == call) {
+    case call:
       error("error: call: instruction not yet supported.");
-    }
+    break;
 
     /* rel imm */
-    else if (node_v == rel) {
+    case rel:
       c_code += "BPF_CALL_REL(" + std::to_string(get_val<int>(node_v1, id1)) +
                 "),\n";
-    }
+    break;
 
     /* exit */
-    else if (node_v == exit_ins) {
+    case exit_ins:
       c_code += "BPF_EXIT_INSN(),\n";
-    }
+    break;
 
     /* jeq32 dst src|imm off */
-    else if (node_v == jeq32) {
+    case jeq32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JEQ, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2028,10 +2199,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JEQ, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jgt32 dst src|imm off */
-    else if (node_v == jgt32) {
+    case jgt32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JGT, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2040,10 +2211,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JGT, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jge32 dst src|imm off */
-    else if (node_v == jge32) {
+    case jge32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JGE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2052,10 +2223,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JGE, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jlt32 dst src|imm off */
-    else if (node_v == jlt32) {
+    case jlt32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JLT, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2064,10 +2235,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JLT, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jle32 dst src|imm off */
-    else if (node_v == jle32) {
+    case jle32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JLE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2076,10 +2247,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JLE, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jset32 dst src|imm off */
-    else if (node_v == jset32) {
+    case jset32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JSET, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2088,10 +2259,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JSET, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jne32 dst src|imm off */
-    else if (node_v == jne32) {
+    case jne32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JNE, " + get_reg_str(node_v1, id1) + ", " +
                   std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2100,10 +2271,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JNE, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jsgt32 dst src|imm off */
-    else if (node_v == jsgt32) {
+    case jsgt32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JSGT, " + get_reg_str(node_v1, id1) + ", "
                    + std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2112,10 +2283,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JSGT, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jsge32 dst src|imm off */
-    else if (node_v == jsge32) {
+    case jsge32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JSGE, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2124,10 +2295,10 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JSGE, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jslt32 dst src|imm off */
-    else if (node_v == jslt32) {
+    case jslt32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JSLT, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + ", " +
@@ -2136,28 +2307,36 @@ void codegen_str(std::string out_fname, std::string struct_name) {
          c_code += "BPF_JMP32_REG(BPF_JSLT, " + get_reg_str(node_v1, id1) + ", "
                    + get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* jsle32 dst src|imm off */
-    else if (node_v == jsle32) {
+    case jsle32:
       if (node_v2 == imm_int)
         c_code += "BPF_JMP32_IMM(BPF_JSLE, " + get_reg_str(node_v1, id1) + ", "
                   + std::to_string(get_val<int>(node_v2, id2)) + ", " +
                   std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
       else
-         c_code += "BPF_JMP32_REG(BPF_JSLE, " + get_reg_str(node_v1, id1) + ", "
-                   + get_reg_str(node_v2, id2) + ", " +
+         c_code += "BPF_JMP32_REG(BPF_JSLE, " +
+                   get_reg_str(node_v1, id1) + ", " +
+                   get_reg_str(node_v2, id2) + ", " +
                    std::to_string((__s16)get_val<int>(node_v3, id3)) + "),\n";
-    }
+    break;
 
     /* zext dst */
-    else if (node_v == zext) {
+    case zext:
       c_code += "BPF_ZEXT_REG(" + get_reg_str(node_v1, id1) + "),\n";
-    }
+    break;
 
+    case regs: case imm_int:
+    break;
+
+    default:
+      error("Internal code generation error: uncovered case for: ",
+            pp_node(node_v));
+    }
   }
 
-  c_code += TAIL_CSTRUCT;
+  c_code += "};\n";
 
   std::ofstream ofs;
   ofs.open(out_fname);

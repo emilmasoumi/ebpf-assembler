@@ -416,7 +416,6 @@ typedef enum {
 
   /* Custom debugging instruction */
   dead_ins
-
 } Node;
 
 typedef std::string ident_t;
@@ -424,13 +423,13 @@ typedef size_t line_t;
 typedef size_t col_t;
 
 struct ast_t {
-  Node node_v;
-  Type type;
+  Node    node_v;
+  Type    type;
   ident_t id;
-  size_t off;
-  size_t arg_num;
-  line_t line;
-  col_t col;
+  size_t  off;
+  size_t  arg_num;
+  line_t  line;
+  col_t   col;
 };
 
 extern std::vector<ast_t> ast;
@@ -448,7 +447,7 @@ void pp_ast(void);
 
 struct symtab_t {
   std::string id;
-  size_t off;
+  size_t      off;
 };
 
 #endif

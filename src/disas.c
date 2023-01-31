@@ -634,8 +634,6 @@ int main(int argc, char **argv) {
       printf("???? opcode=%x dst_reg=%d src_reg=%d off=%d imm=%d ????",
              opcode, dst_reg, src_reg, off, imm);
     printf("\n");
-
-
   }
 
   free(objcode);

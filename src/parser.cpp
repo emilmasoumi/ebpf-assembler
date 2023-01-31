@@ -12,16 +12,16 @@ static inline bool is_number(std::string s) {
 
 static inline bool is_hex(std::string s) {
   return
-    (s.compare(0, 2, "0x") == 0 && s.size() > 2
-     && s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos);
+    (s.compare(0, 2, "0x") == 0 && s.size() > 2 &&
+     s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos);
 }
 
 static inline bool is_decimal(std::string s) {
   if (s.size() < 3)
     return 0;
-  return (s[0] != '.' && s[s.size()-1] != '.'
-         && std::count(s.begin(), s.end(), '.') == 1
-         && s.find_first_not_of("0123456789.", 0) == std::string::npos);
+  return (s[0] != '.' && s[s.size()-1] != '.' &&
+          std::count(s.begin(), s.end(), '.') == 1 &&
+          s.find_first_not_of("0123456789.", 0) == std::string::npos);
 }
 
 static inline bool is_negative(std::string s) {

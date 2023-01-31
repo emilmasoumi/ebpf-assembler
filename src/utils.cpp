@@ -87,13 +87,13 @@ std::string usage(char **argv) {
   usage +=
     " <source> [options]\noptions:\n"
     "    {-O --opt}:\n"
-    "\tEmploys various compiler optimization strageties to the bytecode.\n"
+    "\tEmploy various compiler optimization strageties to the bytecode.\n"
     "    {-c --cstruct} <arg>:\n"
-    "\tCompiles to preprocessing macros located in a C struct named <arg>.\n"
+    "\tCompile to preprocessing macros located in a C struct named <arg>.\n"
     "    {-m --macros}:\n"
-    "\tCompiles to preprocessing macros.\n"
+    "\tCompile to preprocessing macros.\n"
     "    {-o --output} <arg>:\n"
-    "\tOutputs to the succeeding argument.\n"
+    "\tOutput to the succeeding argument <arg>.\n"
     "    {-h --help}:\n"
     "\tDisplay this message.";
   return usage;
@@ -153,7 +153,7 @@ void parse_opts(int argc, char **argv,
 
   for (int i=optind; i<argc; i++) {
     if (strlen(argv[i]) < 3)
-      error("error: file name too short: ", argv[i]);
+      error("error: the file name is too short: ", argv[i]);
     else if (!ends_with(argv[i], ".s"))
       error("error: unrecognized file extension for `", argv[i],
             "` expected a file extension of format `.s`");
