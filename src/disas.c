@@ -13,12 +13,13 @@
 
 #include "../headers/bpf_insn.h"
 
-static inline short byte_concat_bits(unsigned char x, unsigned char y) {
+static inline short concat_bits_to_short(unsigned char x, unsigned char y) {
   return (x << 8) | y;
 }
 
-static inline int short_concat_bits(short x, short y) {
-  return (x << 16) | y;
+static inline int concat_bits_to_int(unsigned char x, unsigned char y,
+                                     unsigned char z, unsigned char w) {
+  return (x << 24) | (y << 16) | (z << 8) | w;
 }
 
 int main(int argc, char **argv) {
@@ -53,8 +54,7 @@ int main(int argc, char **argv) {
 
   ssize_t rd = read(fd, objcode, size);
   if (rd < 0) {
-    fprintf(stderr, "error: read() failed with error code description: %s\n",
-            strerror(errno));
+    fprintf(stderr, "error: read() failed: %s\n", strerror(errno));
     return 1;
   }
   close(fd);
@@ -71,15 +71,15 @@ int main(int argc, char **argv) {
   __s16 off;    /* signed offset */
   __s32 imm;    /* signed immediate constant */
 
-  int addr = 0x00000;
+  unsigned int addr = 0x00000;
   for (int i=7; i<size; i+=8) {
     addr++;
     opcode  = objcode[i-7];
     dst_reg = objcode[i-6] & 0xf;
     src_reg = (objcode[i-6]>>4) & 0xf;
-    off     = byte_concat_bits(objcode[i-4], objcode[i-5]);
-    imm     = short_concat_bits(byte_concat_bits(objcode[i], objcode[i-1]),
-                                byte_concat_bits(objcode[i-2], objcode[i-3]));
+    off     = concat_bits_to_short(objcode[i-4], objcode[i-5]);
+    imm     = concat_bits_to_int(objcode[i],   objcode[i-1],
+                                 objcode[i-2], objcode[i-3]);
 
     printf("%05x: ", addr);
 
