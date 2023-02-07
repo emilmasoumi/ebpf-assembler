@@ -21,7 +21,7 @@ OBJS := $(patsubst %.cpp, %.o, $(SRCS))
 
 all: ebpf-as disas-ebpf load_ebpf load_ebpf_macros
 
-ebpf-as: $(SRC)/*.cpp $(SRC)/*.h $(HEADERS)/*.h $(OBJS)
+ebpf-as: $(SRC)/*.cpp $(SRC)/*.hpp $(HEADERS)/*.h $(OBJS)
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS) -o $@ $(OBJS)
 
 disas-ebpf: $(SRC)/disas.c $(HEADERS)/*.h
@@ -34,5 +34,4 @@ load_ebpf_macros: $(TESTS)/load_ebpf_macros.c $(TESTS)/macros.h $(HEADERS)/*.h
 	$(CC) $(CNOPEDANTICFLAGS) $(TESTS)/load_ebpf_macros.c -o $@
 
 clean:
-	rm -f ebpf-as load_ebpf load_ebpf_macros disas-ebpf
-	rm -f $(SRC)/*.o
+	rm -f ebpf-as load_ebpf load_ebpf_macros disas-ebpf $(SRC)/*.o
