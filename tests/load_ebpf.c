@@ -1,5 +1,5 @@
 /*
-  Load eBPF bytecode from a file containing the object code into the kernel.
+  Load eBPF bytecode into the kernel, from a file containing the object code.
 */
 
 #define _GNU_SOURCE
@@ -25,14 +25,15 @@
 
 char ebpf_log_buf[LOG_BUF_SIZE];
 
-int bpf_prog_load(enum bpf_prog_type prog_type,
-                  const struct bpf_insn *insns, int prog_len,
-                  const char *license) {
+int bpf_prog_load(enum bpf_prog_type     prog_type,
+                  const struct bpf_insn* insns,
+                  int                    prog_len,
+                  const char*            license) {
   union bpf_attr attr = {
     .prog_type = prog_type,
-    .insns     = ptr_to_u64((void *) insns),
+    .insns     = ptr_to_u64((void*)insns),
     .insn_cnt  = prog_len / sizeof(struct bpf_insn),
-    .license   = ptr_to_u64((void *) license),
+    .license   = ptr_to_u64((void*)license),
     .log_buf   = ptr_to_u64(ebpf_log_buf),
     .log_size  = LOG_BUF_SIZE,
     .log_level = 1,
@@ -43,8 +44,10 @@ int bpf_prog_load(enum bpf_prog_type prog_type,
   return syscall(__NR_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
 }
 
-int bpf_create_map(enum bpf_map_type map_type, int key_size, int value_size,
-                   int max_entries) {
+int bpf_create_map(enum bpf_map_type map_type,
+                   int               key_size,
+                   int               value_size,
+                   int               max_entries) {
   union bpf_attr attr = {
     .map_type    = map_type,
     .key_size    = key_size,
@@ -68,8 +71,8 @@ static int create_map(void) {
   return map_fd;
 }
 
-int main(int argc, char **argv) {
-
+int main(int    argc,
+         char** argv) {
   if (argc != 2) {
     printf("%s: error: no eBPF object code provided\n", *argv);
     printf("usage: %s <file-with-object-code>\n", *argv);
@@ -80,21 +83,26 @@ int main(int argc, char **argv) {
 
   int fd;
   fd = open(fname, O_RDONLY);
-
   if (fd < 0) {
-    fprintf(stderr, "error: fopen() failed opening ``%s``: %s",
+    fprintf(stderr, "error: open() failed opening ``%s``: %s",
             *argv, strerror(errno));
     return 1;
   }
 
-  // Get amount of bytes in the object code.
-  int size;
+  // Get the amount of bytes in the object code.
+  size_t size;
   struct stat st;
-  stat(fname, &st);
+  if (stat(fname, &st) < 0) {
+    fprintf(stderr, "error: stat() failed: %s\n", strerror(errno));
+    return 1;
+  }
   size = st.st_size;
 
-  unsigned char *objcode =
-    (unsigned char*)malloc(size*sizeof(unsigned char));
+  uint8_t* objcode = (uint8_t*)malloc(size*sizeof(uint8_t));
+  if (objcode == NULL) {
+    fprintf(stderr, "error: malloc() failed: %s\n", strerror(errno));
+    return 1;
+  }
 
   ssize_t rd = read(fd, objcode, size);
   if (rd < 0) {
@@ -111,6 +119,10 @@ int main(int argc, char **argv) {
 
   /* Create an eBPF map if any instructions in the bytecode use it. */
   prog = malloc(size);
+  if (prog == NULL) {
+    fprintf(stderr, "error: malloc() failed: %s\n", strerror(errno));
+    return 1;
+  }
   memcpy(prog, objcode, size);
   insn = prog;
   for (int i = 0; i < prog_len; i++, insn++) {
