@@ -1,4 +1,4 @@
-#include "parser.h"
+#include "parser.hpp"
 #include <algorithm>
 
 #define parse_err(line, col, id, msg) \
@@ -7,32 +7,33 @@
 std::vector<symtab_t> symtab;
 
 static inline bool is_number(std::string s) {
+  if (s.size() > 1 && s[0] == '-')
+    return (s.find_first_not_of("0123456789", 1) == std::string::npos);
   return (!s.empty() && std::all_of(s.begin(), s.end(), ::isdigit));
 }
 
 static inline bool is_hex(std::string s) {
+  if (s.size() > 3 && s[0] == '-')
+    return
+      (s.compare(1, 2, "0x") == 0 &&
+       s.find_first_not_of("0123456789abcdefABCDEF", 3) == std::string::npos);
   return
-    (s.compare(0, 2, "0x") == 0 && s.size() > 2 &&
+    (s.size() > 2 && s.compare(0, 2, "0x") == 0 &&
      s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos);
 }
 
 static inline bool is_decimal(std::string s) {
-  if (s.size() < 3)
-    return 0;
-  return (s[0] != '.' && s[s.size()-1] != '.' &&
+  if (s.size() > 3)
+    return (s[0] == '-' && s[1] != '.' && s[s.size()-1] != '.' &&
+            std::count(s.begin(), s.end(), '.') == 1 &&
+            s.find_first_not_of("0123456789.", 1) == std::string::npos);
+  return (s.size() > 2 && s[0] != '.' && s[s.size()-1] != '.' &&
           std::count(s.begin(), s.end(), '.') == 1 &&
           s.find_first_not_of("0123456789.", 0) == std::string::npos);
 }
 
-static inline bool is_negative(std::string s) {
-  if (s.size() < 2)
-    return 0;
-  std::string val = s.substr(1, s.size()-1);
-  return (s[0] == '-' && (is_number(val) || is_hex(val) || is_decimal(val)));
-}
-
 static inline bool is_value(std::string s) {
-  return (is_number(s) || is_hex(s) || is_decimal(s) || is_negative(s));
+  return (is_number(s) || is_hex(s) || is_decimal(s));
 }
 
 static inline bool is_whitespace(std::string s) {

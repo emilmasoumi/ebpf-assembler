@@ -13,12 +13,12 @@
 
 #include "../headers/bpf_insn.h"
 
-static inline short concat_bits_to_short(unsigned char x, unsigned char y) {
+static inline short concat_bits_to_short(uint8_t x, uint8_t y) {
   return (x << 8) | y;
 }
 
-static inline int concat_bits_to_int(unsigned char x, unsigned char y,
-                                     unsigned char z, unsigned char w) {
+static inline int concat_bits_to_int(uint8_t x, uint8_t y,
+                                     uint8_t z, uint8_t w) {
   return (x << 24) | (y << 16) | (z << 8) | w;
 }
 
@@ -33,7 +33,6 @@ int main(int argc, char **argv) {
 
   int fd;
   fd = open(fname, O_RDONLY);
-
   if (fd < 0) {
     fprintf(stderr, "error: fopen() failed opening ``%s``: %s\n",
             *argv, strerror(errno));
@@ -49,8 +48,7 @@ int main(int argc, char **argv) {
   }
   size = st.st_size;
 
-  unsigned char *objcode =
-    (unsigned char*)malloc(size*sizeof(unsigned char));
+  uint8_t *objcode = (uint8_t*)malloc(size*sizeof(uint8_t));
 
   ssize_t rd = read(fd, objcode, size);
   if (rd < 0) {
@@ -65,11 +63,11 @@ int main(int argc, char **argv) {
   }
 
   // struct bpf_insn linux/include/uapi/linux/bpf.h
-  __u8 opcode;  /* opcode */
-  __u8 dst_reg; /* dest register */
-  __u8 src_reg; /* source register */
-  __s16 off;    /* signed offset */
-  __s32 imm;    /* signed immediate constant */
+  __u8  opcode;  /* opcode */
+  __u8  dst_reg; /* dest register */
+  __u8  src_reg; /* source register */
+  __s16 off;     /* signed offset */
+  __s32 imm;     /* signed immediate constant */
 
   unsigned int addr = 0x00000;
   for (int i=7; i<size; i+=8) {
@@ -111,9 +109,6 @@ int main(int argc, char **argv) {
     // rsh dst src
     else if (opcode == (BPF_ALU64 | BPF_OP(BPF_RSH) | BPF_X))
       printf("rsh r%d r%d", dst_reg, src_reg);
-    // neg DST_REG
-    else if (opcode == (BPF_ALU64 | BPF_OP(BPF_AND) | BPF_X))
-      printf("neg r%d", dst_reg);
     // mod dst src
     else if (opcode == (BPF_ALU64 | BPF_OP(BPF_MOD) | BPF_X))
       printf("mod r%d r%d", dst_reg, src_reg);
@@ -169,6 +164,13 @@ int main(int argc, char **argv) {
       printf("arsh r%d %d", dst_reg, imm);
 
     /*
+      ALU64 DST_REG
+    */
+    // neg dst
+    else if (opcode == (BPF_ALU64 | BPF_OP(BPF_NEG) | BPF_K))
+      printf("neg r%d", dst_reg);
+
+    /*
       ALU32 DST_REG SRC_REG
     */
     /* BPF_ALU32_REG */
@@ -196,9 +198,6 @@ int main(int argc, char **argv) {
     // rsh32 dst src
     else if (opcode == (BPF_ALU | BPF_OP(BPF_RSH) | BPF_X))
       printf("rsh32 r%d r%d", dst_reg, src_reg);
-    // neg32 DST_REG
-    else if (opcode == (BPF_ALU | BPF_OP(BPF_AND) | BPF_X))
-      printf("neg32 r%d", dst_reg);
     // mod32 dst src
     else if (opcode == (BPF_ALU | BPF_OP(BPF_MOD) | BPF_X))
       printf("mod32 r%d r%d", dst_reg, src_reg);
@@ -252,6 +251,13 @@ int main(int argc, char **argv) {
     // arsh dst imm
     else if (opcode == (BPF_ALU | BPF_OP(BPF_ARSH) | BPF_K))
       printf("arsh32 r%d %d", dst_reg, imm);
+
+    /*
+      ALU32 DST_REG
+    */
+    // neg32 dst
+    else if (opcode == (BPF_ALU | BPF_OP(BPF_NEG) | BPF_K))
+      printf("neg32 r%d", dst_reg);
 
     /*
       Endianess conversion (Byteswap) DST_REG | DST_REG = f(DST_REG)
@@ -395,12 +401,15 @@ int main(int argc, char **argv) {
 
     /* BPF_LD_MAP_FD */
     else if (opcode == (BPF_LD | BPF_DW | BPF_IMM) &&
-             src_reg == BPF_PSEUDO_MAP_FD)
+             src_reg == BPF_PSEUDO_MAP_FD) {
       printf("ldmapfd r%d %d", dst_reg, imm);
+      i+=8;
+    }
     /* BPF_LD_IMM64 */
-    else if (opcode == (BPF_LD | BPF_DW | BPF_IMM))
+    else if (opcode == (BPF_LD | BPF_DW | BPF_IMM) && src_reg == 0) {
       printf("ld64 r%d %d", dst_reg, imm);
-
+      i+=8;
+    }
     /* BPF_LD_ABS */
     else if (opcode == (BPF_LD | BPF_SIZE(8) | BPF_ABS))
       printf("ldabs8 %d", imm);

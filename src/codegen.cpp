@@ -1,11 +1,14 @@
 #include <../headers/bpf_insn.h>
-#include "codegen.h"
+#include "codegen.hpp"
 
 static inline uint max_insns() {
   uint max_insns = 0;
-  for (ast_t node : ast)
+  for (ast_t node : ast) {
     if (node.type == instr)
       max_insns++;
+    if (node.node_v == ld64 || node.node_v == ldmapfd)
+      max_insns++;
+  }
   return max_insns;
 }
 
@@ -198,9 +201,8 @@ void codegen(std::string out_fname) {
                                           get_reg(node_v2, id2));
     break;
 
-    /* neg dst src|imm */
+    /* neg dst */
     case neg:
-      if (node_v2 == imm_int)
         prog[prog_len++] = BPF_ALU64_IMM(BPF_NEG, get_reg(node_v1, id1), 0);
     break;
 
@@ -351,7 +353,6 @@ void codegen(std::string out_fname) {
 
     /* neg32 dst */
     case neg32:
-      if (node_v2 == imm_int)
         prog[prog_len++] = BPF_ALU32_IMM(BPF_NEG, get_reg(node_v1, id1), 0);
     break;
 
@@ -689,14 +690,22 @@ void codegen(std::string out_fname) {
 
     /* ldmapfd dst imm */
     case ldmapfd:
-      prog[prog_len++] = BPF_LD_MAP_FD(get_reg(node_v1, id1),
-                                       get_val<int>(node_v2, id2));
+      prog[prog_len++] = BPF_LD_IMM64_RAW_1(get_reg(node_v1, id1),
+                                            BPF_PSEUDO_MAP_FD,
+                                            get_val<int>(node_v2, id2));
+      prog[prog_len++] = BPF_LD_IMM64_RAW_2(get_reg(node_v1, id1),
+                                            BPF_PSEUDO_MAP_FD,
+                                            get_val<int>(node_v2, id2));
     break;
 
     /* ld64 dst imm */
     case ld64:
-      prog[prog_len++] = BPF_LD_IMM64(get_reg(node_v1, id1),
-                                      get_val<int>(node_v2, id2));
+      prog[prog_len++] = BPF_LD_IMM64_RAW_1(get_reg(node_v1, id1),
+                                            0,
+                                            get_val<int>(node_v2, id2));
+      prog[prog_len++] = BPF_LD_IMM64_RAW_2(get_reg(node_v1, id1),
+                                            0,
+                                            get_val<int>(node_v2, id2));
     break;
 
     /* ldabs8 imm */
@@ -1430,9 +1439,9 @@ void codegen_str(std::string out_fname, std::string struct_name) {
                    get_reg_str(node_v2, id2) + "),\n";
     break;
 
-    /* neg dst src|imm */
+    /* neg dst */
     case neg:
-       c_code += "BPF_ALU64_REG(BPF_NEG, " + get_reg_str(node_v1, id1) +
+       c_code += "BPF_ALU64_IMM(BPF_NEG, " + get_reg_str(node_v1, id1) +
                  ", 0),\n";
     break;
 
@@ -1557,9 +1566,9 @@ void codegen_str(std::string out_fname, std::string struct_name) {
                    + get_reg_str(node_v2, id2) + "),\n";
     break;
 
-    /* neg32 dst src|imm */
+    /* neg32 dst */
     case neg32:
-       c_code += "BPF_ALU32_REG(BPF_NEG, " + get_reg_str(node_v1, id1)
+       c_code += "BPF_ALU32_IMM(BPF_NEG, " + get_reg_str(node_v1, id1)
                  + ", 0),\n";
     break;
 

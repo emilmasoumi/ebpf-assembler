@@ -1,8 +1,8 @@
 #ifndef TYPECHECKER
 #define TYPECHECKER
 
-#include "ast.h"
-#include "utils.h"
+#include "ast.hpp"
+#include "utils.hpp"
 
 void typechecker(void);
 

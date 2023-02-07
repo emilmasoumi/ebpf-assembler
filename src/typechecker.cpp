@@ -1,4 +1,4 @@
-#include "typechecker.h"
+#include "typechecker.hpp"
 
 #define unexpected_op_err(line, col, id1, id2)                       \
   (error(line, ":", col, ": type error: unexpected operand ``", id1, \

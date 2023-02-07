@@ -1,5 +1,5 @@
-#include "ast.h"
-#include "utils.h"
+#include "ast.hpp"
+#include "utils.hpp"
 #include <getopt.h>
 #include <cstring>
 

@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "ast.hpp"
 
 std::vector<ast_t> ast;
 

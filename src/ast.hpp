@@ -3,7 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <iomanip>
-#include "utils.h"
+#include "utils.hpp"
 
 #ifndef AST
 #define AST

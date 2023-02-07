@@ -1,8 +1,8 @@
 #ifndef CODEGEN
 #define CODEGEN
 
-#include "ast.h"
-#include "utils.h"
+#include "ast.hpp"
+#include "utils.hpp"
 
 #include <cstring>
 #include <sys/types.h>
