@@ -1,3 +1,6 @@
-mov r0 r0
-mov r0 r10
-exit
+mov r0 0x0
+mov r0 0x0
+mov r1 0x0
+mov r8 0x0
+mov r9 0x0
+;c

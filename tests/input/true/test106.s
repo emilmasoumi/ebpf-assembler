@@ -1,0 +1,24 @@
+;;;; Branch instructions:
+; 32-bit:
+jeq32  r0 512 4096
+jeq32  r0 r1 4096
+jgt32  r0 512 4096
+jgt32  r0 r1 4096
+jge32  r0 512 4096
+jge32  r0 r1 4096
+jlt32  r0 512 4096
+jlt32  r0 r1 4096
+jle32  r0 512 4096
+jle32  r0 r1 4096
+jset32 r0 512 4096
+jset32 r0 r1 4096
+jne32  r0 512 4096
+jne32  r0 r1 4096
+jsgt32 r0 512 4096
+jsgt32 r0 r1 4096
+jsge32 r0 512 4096
+jsge32 r0 r1 4096
+jslt32 r0 512 4096
+jslt32 r0 r1 4096
+jsle32 r0 512 4096
+jsle32 r0 r1 4096

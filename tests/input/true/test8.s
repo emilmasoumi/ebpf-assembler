@@ -1,1 +1,2 @@
-mov r0 -2
+mov r0 0x0001
+exit

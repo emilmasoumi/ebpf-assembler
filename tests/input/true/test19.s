@@ -1,3 +1,5 @@
-mov r0 0x1c7
-mov r1 0x1c8
-; No new line at the EOF.
+mov r3 2147483647
+add r3 -2147483648
+ld64 r10 2147483647
+ld64 r9 -2147483648
+ldmapfd r8 -2147483648

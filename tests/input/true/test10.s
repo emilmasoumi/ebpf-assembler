@@ -1,2 +1,4 @@
-add r0 r1
-add32 r0 r1
+mov r0 3
+lab:
+mov r5 9
+mov r9 4

@@ -1,3 +1,1 @@
-mov r0 3
-mov r5 33
-mov r9 333
+mov r0 2147483647

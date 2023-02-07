@@ -1,4 +1,3 @@
 mov r0 3
-lab:
-mov r5 9
-mov r9 4
+mov r5 33
+mov r9 333

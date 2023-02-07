@@ -1,0 +1,2 @@
+;;;; Branch instruction exit:
+exit
