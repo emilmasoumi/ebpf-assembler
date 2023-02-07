@@ -28,22 +28,22 @@ Refer to bpfc [1] for another assembler/compiler.
 --------
 Building:
 
-make -j$(nproc)
+make
 
 --------
 Usage:
 ./ebpf-as <source> [options]
 options:
     {-O --opt}:
-        Employs various compiler optimization strategies to the bytecode.
+        Employ various compiler optimization strategies to the bytecode.
     {-c --cstruct} <arg>:
-        Compiles to preprocessing macros located in a C struct named <arg>.
+        Compile to preprocessing macros located in a C struct named <arg>.
     {-m --macros}:
-        Compiles to preprocessing macros.
+        Compile to preprocessing macros.
     {-o --output} <arg>:
-        Outputs to the succeeding argument.
+        Output to the succeeding argument.
     {-h --help}:
-        Prints this usage message.
+        Print this usage message.
 
 --------
 Example:
