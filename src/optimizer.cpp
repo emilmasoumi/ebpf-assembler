@@ -1,4 +1,4 @@
-#include "optimizer.h"
+#include "optimizer.hpp"
 
 void dead_store_elim(void) {
 

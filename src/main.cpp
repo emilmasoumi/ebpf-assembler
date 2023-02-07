@@ -1,9 +1,9 @@
-#include "ast.h"
-#include "parser.h"
-#include "typechecker.h"
-#include "optimizer.h"
-#include "codegen.h"
-#include "utils.h"
+#include "ast.hpp"
+#include "parser.hpp"
+#include "typechecker.hpp"
+#include "optimizer.hpp"
+#include "codegen.hpp"
+#include "utils.hpp"
 
 int main(int argc, char **argv) {
   std::vector<std::string> filenames;
