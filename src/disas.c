@@ -50,8 +50,7 @@ int main(int argc, char **argv) {
 
   uint8_t *objcode = (uint8_t*)malloc(size*sizeof(uint8_t));
 
-  ssize_t rd = read(fd, objcode, size);
-  if (rd < 0) {
+  if (read(fd, objcode, size) < 0) {
     fprintf(stderr, "error: read() failed: %s\n", strerror(errno));
     return 1;
   }
@@ -629,7 +628,7 @@ int main(int argc, char **argv) {
     /* BPF_EXIT_INSN */
     // exit
     else if (opcode == (BPF_JMP | BPF_EXIT))
-      printf("exit ");
+      printf("exit");
 
     /*
       Special instructions
