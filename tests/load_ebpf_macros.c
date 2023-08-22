@@ -78,8 +78,16 @@ int main(void) {
   map_fd   = map_fd;
   prog_len = probe_filter_length(prog);
 
-  bpf_prog_load(BPF_PROG_TYPE_SOCKET_FILTER, prog,
-                prog_len * sizeof(struct bpf_insn), "GPL");
+  int prog_fd = bpf_prog_load(BPF_PROG_TYPE_SOCKET_FILTER, prog,
+                              prog_len * sizeof(struct bpf_insn), "GPL");
+
+  if (prog_fd < 0) {
+    printf("%s\n", bpf_log_buf);
+    fprintf(stderr, "failed to load object code: %s\n", strerror(errno));
+  } else {
+    printf("%s\n", bpf_log_buf);
+    printf("eBPF program load was successful.\n");
+  }
 
   return 0;
 }
