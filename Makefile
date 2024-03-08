@@ -4,9 +4,9 @@ ASAN = -fsanitize=address -fsanitize=pointer-compare -fsanitize=leak \
 -fsanitize=undefined
 CFLAGS = -std=c99 -O2 -Wall -Wextra -pedantic-errors -Wshadow \
 -Wstrict-aliasing -Werror -Wunreachable-code -Wno-long-long
-CXXFLAGS = -std=c++17 -fconcepts -Wshadow -Wstrict-aliasing -Werror \
+CXXFLAGS = -std=c++20 -fconcepts -Wshadow -Wstrict-aliasing -Werror \
 -Wunreachable-code -Wno-long-long -pedantic-errors -Wall -Wextra -O2 \
--isystem headers/
+-Wno-missing-field-initializers -isystem headers/
 LDLIBS = -lm
 LDFLAGS = -g
 CNOPEDANTICFLAGS = -std=c99 -O2 -Wall -Wextra -Wshadow -Wstrict-aliasing \
@@ -16,7 +16,7 @@ SRC = src
 TESTS = tests
 HEADERS = headers
 
-SRCS := $(shell find $(SRC) -name "*.cpp")
+SRCS := $(shell find $(SRC) -maxdepth 1 -name "*.cpp")
 OBJS := $(patsubst %.cpp, %.o, $(SRCS))
 
 all: ebpf-as disas-ebpf load_ebpf load_ebpf_macros
