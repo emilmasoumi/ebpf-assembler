@@ -1,28 +1,29 @@
-#include <ostream>
-#include <cstdint>
-#include <vector>
-#include <iostream>
+#include <stddef.h>
+#include <stdint.h>
+#include <string>
 #include <iomanip>
+#include <string.h>
 #include "utils.hpp"
 
-#ifndef AST
-#define AST
+#ifndef AST_H
+#define AST_H
 
-typedef enum {instr, ident, direc, imm, reg} Type;
+#define OPERANDS  3
+#define MAX_INSNS 1000000
+
+#define FST 0
+#define SND 1
+#define TRD 2
+#define FRT 3
+
+#define ASIZE ast.size()
+#define PUSH  ast.push_back
+
+typedef enum {Instruction, Immediate, Register, Label, Reference, Empty} Type;
+
+typedef enum {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10} Regs;
 
 typedef enum {
-  /* Directives */
-  dirs,
-
-  /* Immediates */
-  imm_int,
-  imm_float,
-
-  /* Registers */
-  regs,
-
-  /* Instructions */
-
   /* add dst src */
   /* add dst imm */
   add,
@@ -37,15 +38,15 @@ typedef enum {
 
   /* div dst src */
   /* div dst imm */
-  div_ins,
+  div_,
 
   /* or dst src */
   /* or dst imm */
-  or_ins,
+  or_,
 
   /* and dst src */
   /* and dst imm */
-  and_ins,
+  and_,
 
   /* lsh dst src */
   /* lsh dst imm */
@@ -64,7 +65,7 @@ typedef enum {
 
   /* xor dst src */
   /* xor dst imm */
-  xor_ins,
+  xor_,
 
   /* mov dst src */
   /* mov dst imm */
@@ -365,7 +366,7 @@ typedef enum {
   rel,
 
   /* exit */
-  exit_ins,
+  exit_,
 
   /* jeq32 dst imm off */
   /* jeq32  dst src off */
@@ -413,41 +414,118 @@ typedef enum {
 
   /* zext dst */
   zext,
+} ISA;
 
-  /* Custom debugging instruction */
-  dead_ins
-} Node;
-
-typedef std::string ident_t;
-typedef size_t line_t;
-typedef size_t col_t;
-
-struct ast_t {
-  Node    node_v;
-  Type    type;
-  ident_t id;
-  size_t  off;
-  size_t  arg_num;
-  line_t  line;
-  col_t   col;
+struct Pos {
+  Nat line;
+  Nat col;
 };
 
-extern std::vector<ast_t> ast;
-
-#define CMP_TYPES(t1, t2) (std::is_same<t1, t2>::value)
-#define TYPENAME(e) (typeid(e).name())
-
-#define dealloc_ast() (ast.erase(ast.begin(), ast.end()))
-
-std::string pp_node(Node);
-std::string pp_type(Type);
-uint get_ops(Node);
-uint get_off(Node);
-void pp_ast(void);
-
-struct symtab_t {
-  std::string id;
-  size_t      off;
+struct Imm {
+  Int val;
+  Pos pos;
 };
+
+struct Reg {
+  Regs reg;
+  Pos  pos;
+};
+
+struct Lab {
+  Id  lname;
+  Nat off;
+  Pos pos;
+};
+
+struct Ref {
+  Id  id;
+  Pos pos;
+};
+
+struct Ins {
+  struct {U(Reg reg; Imm imm; Ref var;); Type ty = Empty;} ops[OPERANDS];
+  ISA  ins;
+  Pos  pos;
+};
+
+struct Stat {
+  U(Ins ins; Lab lab;);
+  Type ty;
+};
+
+typedef Vector<Stat> AST;
+
+extern AST ast;
+extern Str bytecode;
+
+TUPLE(RegsL, Id s; Regs reg;);
+TUPLE(InsL,  Id s; ISA  ins;);
+
+static const RegsL registers[] =
+  {{"r0", r0}, {"r1", r1}, {"r2", r2}, {"r3", r3}, {"r4",  r4},  {"r5", r5},
+   {"r6", r6}, {"r7", r7}, {"r8", r8}, {"r9", r9}, {"r10", r10}};
+static const InsL instructions[] =
+  {{"add", add},  {"sub", sub}, {"mul",  mul}, {"div", div_}, {"or",  or_},
+   {"and", and_}, {"lsh", lsh}, {"rsh",  rsh}, {"neg", neg},  {"mod", mod},
+   {"xor", xor_}, {"mov", mov}, {"arsh", arsh},
+   {"add32",  add32}, {"sub32", sub32}, {"mul32", mul32}, {"div32", div32},
+   {"or32",   or32},  {"and32", and32}, {"lsh32", lsh32}, {"rsh32", rsh32},
+   {"neg32",  neg32}, {"mod32", mod32}, {"xor32", xor32}, {"mov32", mov32},
+   {"arsh32", arsh32},
+   {"le16", le16}, {"le32", le32}, {"le64", le64}, {"be16", be16},
+   {"be32", be32}, {"be64", be64},
+   {"addx16",  addx16},  {"addx32",  addx32},  {"addx64",  addx64},
+   {"andx16",  andx16},  {"andx32",  andx32},  {"andx64",  andx64},
+   {"orx16",   orx16},   {"orx32",   orx32},   {"orx64",   orx64},
+   {"xorx16",  xorx16},  {"xorx32",  xorx32},  {"xorx64",  xorx64},
+   {"addfx16", addfx16}, {"addfx32", addfx32}, {"addfx64", addfx64},
+   {"andfx16", andfx16}, {"andfx32", andfx32}, {"andfx64", andfx64},
+   {"orfx16",  orfx16},  {"orfx32",  orfx32},  {"orfx64",  orfx64},
+   {"xorfx16", xorfx16}, {"xorfx32", xorfx32}, {"xorfx64", xorfx64},
+   {"xchgx16", xchgx16}, {"xchgx32", xchgx32}, {"xchgx64", xchgx64},
+   {"cmpxchgx16", cmpxchgx16}, {"cmpxchgx32", cmpxchgx32},
+   {"cmpxchgx64", cmpxchgx64},
+   {"ldmapfd", ldmapfd}, {"ld64",    ld64},
+   {"ldabs8",  ldabs8},  {"ldabs16", ldabs16}, {"ldabs32", ldabs32},
+   {"ldabs64", ldabs64},
+   {"ldind8",  ldind8}, {"ldind16", ldind16}, {"ldind32", ldind32},
+   {"ldind64", ldind64},
+   {"ldx8",  ldx8},  {"ldx16",  ldx16},  {"ldx32",  ldx32},  {"ldx64",  ldx64},
+   {"st8",   st8},   {"st16",   st16},   {"st32",   st32},   {"st64",   st64},
+   {"stx8",  stx8},  {"stx16",  stx16},  {"stx32",  stx32},  {"stx64",  stx64},
+   {"stxx8", stxx8}, {"stxx16", stxx16}, {"stxx32", stxx32}, {"stxx64", stxx64},
+   {"ja",   ja},  {"jeq",  jeq}, {"jgt", jgt}, {"jge", jge}, {"jlt", jlt},
+   {"jle",  jle}, {"jset", jset},
+   {"jne",  jne}, {"jsgt", jsgt}, {"jsge", jsge}, {"jslt", jslt},
+   {"jsle", jsle},
+   {"call", call}, {"rel", rel}, {"exit", exit_},
+   {"jeq32",  jeq32},  {"jgt32",  jgt32},  {"jge32",  jge32},
+   {"jlt32",  jlt32},  {"jle32",  jle32},  {"jset32", jset32},
+   {"jne32",  jne32},  {"jsgt32", jsgt32}, {"jsge32", jsge32},
+   {"jslt32", jslt32}, {"jsle32", jsle32},
+   {"zext", zext}};
+
+void dealloc();
+void pp_ast();
+
+Id toId(Str);
+Id pp_type(Type);
+Id pp_reg(Regs);
+Id pp_ins(ISA);
+
+Id pp_stat(Nat i = ASIZE - 1);
+
+Stat& stat(Nat i = ASIZE - 1);
+
+ISA&  isa(Nat i = ASIZE - 1);
+Ins&  ins(Nat i = ASIZE - 1);
+Lab&  lab(Nat i = ASIZE - 1);
+
+Type& type(  Nat i = ASIZE - 1);
+Type& optype(Nat i, Nat j = ASIZE - 1);
+
+Imm& imm(Nat i, Nat j = ASIZE - 1);
+Reg& reg(Nat i, Nat j = ASIZE - 1);
+Ref& ref(Nat i, Nat j = ASIZE - 1);
 
 #endif

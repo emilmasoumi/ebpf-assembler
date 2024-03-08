@@ -1,215 +1,85 @@
 #include "parser.hpp"
 #include <algorithm>
 
-#define parse_err(line, col, id, msg) \
-  (error(line, ":", col, ": parse error: ", msg, err_getline(id, line, col)))
+#define SYMBOLS '-', '+', '/', '*', '>', '<', '=',  '|', '&', '%', '(', ')', \
+                '{', '}', ',', '.', ':', ';', '#', '\'', '\"'
 
-std::vector<symtab_t> symtab;
+Id symbols = "- + / * > < = | & % ( ) { } , . : ; # \' \"";
 
-static inline bool is_number(std::string s) {
+#define ERROR(...) \
+  (error(line, ":", col, ": " ERR_STR, __VA_ARGS__, err_getline(tok, line, col)))
+
+const char* expr;
+Str tok;
+
+Nat offset = 1, col = 1, line = 1;
+
+static inline void check_off() {
+  if (offset <= 1)
+    error(line, ":", col, ": " ERR_STR "expected at least one instruction");
+  else if (offset > MAX_INSNS)
+    ERROR("instruction limit [", MAX_INSNS, "] exceeded: [", offset, "]");
+}
+
+static inline bool is_number(Str s) {
   if (s.size() > 1 && s[0] == '-')
-    return (s.find_first_not_of("0123456789", 1) == std::string::npos);
+    return (s.find_first_not_of("0123456789", 1) == Str::npos);
   return (!s.empty() && std::all_of(s.begin(), s.end(), ::isdigit));
 }
 
-static inline bool is_hex(std::string s) {
+static inline bool is_hex(Str s) {
   if (s.size() > 3 && s[0] == '-')
-    return
-      (s.compare(1, 2, "0x") == 0 &&
-       s.find_first_not_of("0123456789abcdefABCDEF", 3) == std::string::npos);
-  return
-    (s.size() > 2 && s.compare(0, 2, "0x") == 0 &&
-     s.find_first_not_of("0123456789abcdefABCDEF", 2) == std::string::npos);
+    return (s.compare(1, 2, "0x") == 0 &&
+            s.find_first_not_of("0123456789abcdefABCDEF", 3) == Str::npos);
+  return (s.size() > 2 && s.compare(0, 2, "0x") == 0 &&
+          s.find_first_not_of("0123456789abcdefABCDEF", 2) == Str::npos);
 }
 
-static inline bool is_decimal(std::string s) {
-  if (s.size() > 3)
-    return (s[0] == '-' && s[1] != '.' && s[s.size()-1] != '.' &&
+static inline bool is_decimal(Str s) {
+  if (s.size() >= 4 && s[0] == '-')
+    return (s[1] != '.' && s[s.size()-1] != '.' &&
             std::count(s.begin(), s.end(), '.') == 1 &&
-            s.find_first_not_of("0123456789.", 1) == std::string::npos);
-  return (s.size() > 2 && s[0] != '.' && s[s.size()-1] != '.' &&
+            s.find_first_not_of("0123456789.", 1) == Str::npos);
+  return (s.size() >= 3 && s[0] != '.' && s[s.size()-1] != '.' &&
           std::count(s.begin(), s.end(), '.') == 1 &&
-          s.find_first_not_of("0123456789.", 0) == std::string::npos);
+          s.find_first_not_of("0123456789.", 0) == Str::npos);
 }
 
-static inline bool is_value(std::string s) {
+static inline bool is_value(Str s) {
   return (is_number(s) || is_hex(s) || is_decimal(s));
 }
 
-static inline bool is_whitespace(std::string s) {
+static inline bool is_whitespace(Str s) {
   return std::all_of(s.begin(), s.end(), isspace);
 }
 
-static inline bool malformed(std::string s) {
+static inline bool malformed(Str s) {
   for (int c : s)
     if (c < 1)
       return true;
   return false;
 }
 
-static inline bool is_reg(ident_t id) {
-  for (ident_t r : registers)
-    if (r == id)
+static inline bool is_reg(Str id) {
+  for (auto [s, r] : registers)
+    if (s == id)
       return true;
   return false;
 }
 
-static inline bool is_instr(ident_t id) {
-  for (ident_t ins : instructions)
-    if (ins == id)
+static inline bool is_instr(Str id) {
+  for (auto [s, i] : instructions)
+    if (s == id)
       return true;
   return false;
 }
 
-size_t offset = 0, col = 1, line = 1;
-ident_t tok;
-
-static inline symtab_t lookup_symtab(ident_t id) {
-  for (symtab_t e : symtab)
-    if (e.id == id)
-      return e;
-  error("``", id, "`` is not a directive");
-  return {"", 0};
-}
-
-static inline bool is_directive(ident_t id) {
-  for (symtab_t e : symtab)
-    if (e.id == id)
+static inline bool is_label(Str id) {
+  for (Stat s : ast)
+    if (s.ty == Label && s.lab.lname == id)
       return true;
   return false;
 }
-
-static inline void push_reg() {
-  ast.push_back({regs, reg, tok, 0, 0, line, col});
-}
-
-static inline void push_instr(Node node, size_t arg_num) {
-  ast.push_back({node, instr, tok, ++offset, arg_num, line, col});
-}
-
-static inline void push_ident() {
-  ast.push_back({dirs, ident, tok, 0, 0, line, col});
-}
-
-static inline void instruction(ident_t id = tok) {
-  if      (id == "add")        push_instr(add,        2);
-  else if (id == "sub")        push_instr(sub,        2);
-  else if (id == "mul")        push_instr(mul,        2);
-  else if (id == "div")        push_instr(div_ins,    2);
-  else if (id == "or")         push_instr(or_ins,     2);
-  else if (id == "and")        push_instr(and_ins,    2);
-  else if (id == "lsh")        push_instr(lsh,        2);
-  else if (id == "rsh")        push_instr(rsh,        2);
-  else if (id == "neg")        push_instr(neg,        1);
-  else if (id == "mod")        push_instr(mod,        2);
-  else if (id == "xor")        push_instr(xor_ins,    2);
-  else if (id == "mov")        push_instr(mov,        2);
-  else if (id == "arsh")       push_instr(arsh,       2);
-  else if (id == "add32")      push_instr(add32,      2);
-  else if (id == "sub32")      push_instr(sub32,      2);
-  else if (id == "mul32")      push_instr(mul32,      2);
-  else if (id == "div32")      push_instr(div32,      2);
-  else if (id == "or32")       push_instr(or32,       2);
-  else if (id == "and32")      push_instr(and32,      2);
-  else if (id == "lsh32")      push_instr(lsh32,      2);
-  else if (id == "rsh32")      push_instr(rsh32,      2);
-  else if (id == "neg32")      push_instr(neg32,      1);
-  else if (id == "mod32")      push_instr(mod32,      2);
-  else if (id == "xor32")      push_instr(xor32,      2);
-  else if (id == "mov32")      push_instr(mov32,      2);
-  else if (id == "arsh32")     push_instr(arsh32,     2);
-  else if (id == "le16")       push_instr(le16,       1);
-  else if (id == "le32")       push_instr(le32,       1);
-  else if (id == "le64")       push_instr(le64,       1);
-  else if (id == "be16")       push_instr(be16,       1);
-  else if (id == "be32")       push_instr(be32,       1);
-  else if (id == "be64")       push_instr(be64,       1);
-  else if (id == "addx16")     push_instr(addx16,     3);
-  else if (id == "addx32")     push_instr(addx32,     3);
-  else if (id == "addx64")     push_instr(addx64,     3);
-  else if (id == "andx16")     push_instr(andx16,     3);
-  else if (id == "andx32")     push_instr(andx32,     3);
-  else if (id == "andx64")     push_instr(andx64,     3);
-  else if (id == "orx16")      push_instr(orx16,      3);
-  else if (id == "orx32")      push_instr(orx32,      3);
-  else if (id == "orx64")      push_instr(orx64,      3);
-  else if (id == "xorx16")     push_instr(xorx16,     3);
-  else if (id == "xorx32")     push_instr(xorx32,     3);
-  else if (id == "xorx64")     push_instr(xorx64,     3);
-  else if (id == "addfx16")    push_instr(addfx16,    3);
-  else if (id == "addfx32")    push_instr(addfx32,    3);
-  else if (id == "addfx64")    push_instr(addfx64,    3);
-  else if (id == "andfx16")    push_instr(andfx16,    3);
-  else if (id == "andfx32")    push_instr(andfx32,    3);
-  else if (id == "andfx64")    push_instr(andfx64,    3);
-  else if (id == "orfx16")     push_instr(orfx16,     3);
-  else if (id == "orfx32")     push_instr(orfx32,     3);
-  else if (id == "orfx64")     push_instr(orfx64,     3);
-  else if (id == "xorfx16")    push_instr(xorfx16,    3);
-  else if (id == "xorfx32")    push_instr(xorfx32,    3);
-  else if (id == "xorfx64")    push_instr(xorfx64,    3);
-  else if (id == "xchgx16")    push_instr(xchgx16,    3);
-  else if (id == "xchgx32")    push_instr(xchgx32,    3);
-  else if (id == "xchgx64")    push_instr(xchgx64,    3);
-  else if (id == "cmpxchgx16") push_instr(cmpxchgx16, 3);
-  else if (id == "cmpxchgx32") push_instr(cmpxchgx32, 3);
-  else if (id == "cmpxchgx64") push_instr(cmpxchgx64, 3);
-  else if (id == "ldmapfd")    push_instr(ldmapfd,    2);
-  else if (id == "ld64")       push_instr(ld64,       2);
-  else if (id == "ldabs8")     push_instr(ldabs8,     1);
-  else if (id == "ldabs16")    push_instr(ldabs16,    1);
-  else if (id == "ldabs32")    push_instr(ldabs32,    1);
-  else if (id == "ldabs64")    push_instr(ldabs64,    1);
-  else if (id == "ldind8")     push_instr(ldind8,     2);
-  else if (id == "ldind16")    push_instr(ldind16,    2);
-  else if (id == "ldind32")    push_instr(ldind32,    2);
-  else if (id == "ldind64")    push_instr(ldind64,    2);
-  else if (id == "ldx8")       push_instr(ldx8,       3);
-  else if (id == "ldx16")      push_instr(ldx16,      3);
-  else if (id == "ldx32")      push_instr(ldx32,      3);
-  else if (id == "ldx64")      push_instr(ldx64,      3);
-  else if (id == "st8")        push_instr(st8,        3);
-  else if (id == "st16")       push_instr(st16,       3);
-  else if (id == "st32")       push_instr(st32,       3);
-  else if (id == "st64")       push_instr(st64,       3);
-  else if (id == "stx8")       push_instr(stx8,       3);
-  else if (id == "stx16")      push_instr(stx16,      3);
-  else if (id == "stx32")      push_instr(stx32,      3);
-  else if (id == "stx64")      push_instr(stx64,      3);
-  else if (id == "stxx8")      push_instr(stxx8,      3);
-  else if (id == "stxx16")     push_instr(stxx16,     3);
-  else if (id == "stxx32")     push_instr(stxx32,     3);
-  else if (id == "stxx64")     push_instr(stxx64,     3);
-  else if (id == "ja")         push_instr(ja,         1);
-  else if (id == "jeq")        push_instr(jeq,        3);
-  else if (id == "jgt")        push_instr(jgt,        3);
-  else if (id == "jge")        push_instr(jge,        3);
-  else if (id == "jlt")        push_instr(jlt,        3);
-  else if (id == "jle")        push_instr(jle,        3);
-  else if (id == "jset")       push_instr(jset,       3);
-  else if (id == "jne")        push_instr(jne,        3);
-  else if (id == "jsgt")       push_instr(jsgt,       3);
-  else if (id == "jsge")       push_instr(jsge,       3);
-  else if (id == "jslt")       push_instr(jslt,       3);
-  else if (id == "jsle")       push_instr(jsle,       3);
-  else if (id == "call")       push_instr(call,       1);
-  else if (id == "rel")        push_instr(rel,        1);
-  else if (id == "exit")       push_instr(exit_ins,   0);
-  else if (id == "jeq32")      push_instr(jeq32,      3);
-  else if (id == "jgt32")      push_instr(jgt32,      3);
-  else if (id == "jge32")      push_instr(jge32,      3);
-  else if (id == "jlt32")      push_instr(jlt32,      3);
-  else if (id == "jle32")      push_instr(jle32,      3);
-  else if (id == "jset32")     push_instr(jset32,     3);
-  else if (id == "jne32")      push_instr(jne32,      3);
-  else if (id == "jsgt32")     push_instr(jsgt32,     3);
-  else if (id == "jsge32")     push_instr(jsge32,     3);
-  else if (id == "jslt32")     push_instr(jslt32,     3);
-  else if (id == "jsle32")     push_instr(jsle32,     3);
-  else if (id == "zext")       push_instr(zext,       1);
-}
-
-const char *expr;
 
 static inline void align() {
   if (*expr == '\n') {
@@ -246,37 +116,122 @@ static inline void comment() {
     ;;
 }
 
-static inline void number() {
-  int i;
-  if (is_hex(tok))
-    i = stoi_w(tok, 0, 16);
-  else
-    i = stoi_w(tok);
-  ast.push_back({imm_int, imm, std::to_string(i), 0, 0, line, col});
+static inline bool has_reserved(Str id) {
+  return std::any_of(id.begin(), id.end(),
+                     [](unsigned char c) { return some_eq(c, SYMBOLS); });
 }
 
-static inline void directive() {
+static inline void instruction(Str id = tok) {
+  for (auto [s, i] : instructions)
+    if (id == s) {
+      PUSH(Stat{.ins = Ins{.ins = i, .pos = Pos {line, col}},
+                .ty  = Instruction});
+      ++offset;
+      return;
+    }
+}
+
+static inline void label() {
   if (is_value(tok) || is_reg(tok) || is_instr(tok))
-    parse_err(line, col, tok, "directive: ``"+tok+"`` cannot be a number or keyword");
+    ERROR("label: `", tok, "` cannot be a number or keyword");
+  if (is_label(tok))
+    ERROR("multiple equivalent label definitions of `", tok, "`");
+  if (has_reserved(tok))
+    ERROR("label: `", tok, "` cannot contain a reserved symbol:", symbols);
+  if (tok.empty())
+    ERROR("a label identifier cannot be empty");
 
-  if (is_directive(tok))
-    parse_err(line, col, tok, "multiple directive definitions of ``"+tok+"``");
+  PUSH(Stat{.lab = Lab{toId(tok), offset, Pos{line, col}}, .ty = Label});
+}
 
-  if (offset)
-    symtab.push_back({tok, offset});
+#define CHECK if (ASIZE < 1) { \
+  ERROR("undefined referencing");}
+
+#define VALID_OP_PASS(x) CHECK; if (type() != Instruction) { \
+  ERROR(#x" cannot be passed to: ", pp_type(type()));}
+
+#define EXCESSIVE_OPS \
+  ERROR("too many operands specified: `", tok, "` when passed to: ", \
+        pp_stat(), " : ", pp_type(type()));
+
+static inline void imm() {
+  Int v;
+  if (is_hex(tok))
+    v = stoi_w(tok, 0, 16);
   else
-    symtab.push_back({tok, 1});
+    v = stoi_w(tok);
+  VALID_OP_PASS(immediates);
+  for (Nat i = 0; i < OPERANDS; ++i)
+    if (optype(i) == Empty) {
+      optype(i) = Immediate;
+      imm(i)    = {v, Pos{line, col}};
+      return;
+    }
+  EXCESSIVE_OPS
+}
+
+static inline void register_() {
+  VALID_OP_PASS(registers);
+  for (Nat i = 0; i < OPERANDS; ++i) {
+    if (optype(i) == Empty) {
+      optype(i) = Register;
+      for (auto [s, r] : registers) {
+        if (tok == s) {
+          reg(i) = {r, Pos{line, col}};
+          return;
+        }
+      }
+    }
+  }
+  EXCESSIVE_OPS
 }
 
 static inline void identifier() {
-  push_ident();
+  if (has_reserved(tok))
+    ERROR("expression: `", tok, "` cannot contain a reserved symbol: ",
+          symbols);
+  VALID_OP_PASS(identifiers);
+  for (Nat i = 0; i < OPERANDS; ++i)
+    if (optype(i) == Empty) {
+      optype(i) = Reference;
+      ref(i)    = Ref{toId(tok), Pos{line, col}};
+      return;
+    }
+  EXCESSIVE_OPS
+}
+
+static inline Lab lookup_label(Id id, Pos p) {
+  for (Nat i = 0; i < ASIZE; ++i)
+    if (type(i) == Label && !strcmp(id, lab(i).lname))
+      return lab(i);
+  error(p.line, ":", p.col, ": " ERR_STR "undefined identifier: `", id,
+        "` in this scope");
+  return Lab{};
+}
+
+static inline void deduce() {
+  Ref var;
+  Lab lab;
+  for (Nat i = 0; i < ASIZE; ++i) {
+    if (type(i) != Instruction)
+      continue;
+    for (Nat j = 0; j < OPERANDS; ++j) {
+      if (optype(j, i) == Reference) {
+        var = ref(j, i);
+        lab = lookup_label(var.id, var.pos);
+        delete[] var.id;
+        optype(j, i) = Immediate;
+        imm(j, i)    = {(Int)lab.off, var.pos};
+      }
+    }
+  }
 }
 
 static inline void assembly() {
   if (is_instr(tok))
     instruction();
   else if (is_reg(tok))
-    push_reg();
+    register_();
   else
     identifier();
 }
@@ -291,9 +246,9 @@ static inline void statement() {
     tok += next_sym();
 
   if (sym() == ':')
-    directive();
+    label();
   else if (is_value(tok))
-    number();
+    imm();
   else if (!is_whitespace(tok) && !malformed(tok))
     assembly();
 
@@ -306,25 +261,11 @@ static inline void statement() {
   statement();
 }
 
-static inline void transform() {
-  for (ast_t &n : ast) {
-    if (n.type == ident) {
-      if (is_directive(n.id)) {
-        n.node_v = imm_int;
-        n.type   = imm;
-        n.id     = std::to_string(lookup_symtab(n.id).off);
-      }
-      else
-        parse_err(n.line, n.col, n.id, "undefined identifier: "+n.id);
-    }
-  }
-}
-
-void parser(void) {
+void parser() {
   expr = bytecode.c_str();
-  statement();
-  transform();
 
-  if (!offset)
-    error(line, ":", col, ": parse error: expected at least one instruction");
+  statement();
+  deduce();
+
+  check_off();
 }

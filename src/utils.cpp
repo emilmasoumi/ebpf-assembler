@@ -3,85 +3,105 @@
 #include <getopt.h>
 #include <cstring>
 
-std::string bytecode;
-
-uint optimize = 0;
-uint cmacro   = 0;
+Nat optimize = 0;
+Nat cmacro   = 0;
 
 void error() {
-  std::cout<<std::endl;
+  IO << std::endl;
   exit(1);
 }
 
 // std::stoi() wrapper.
-int stoi_w(const std::string& str, std::size_t* idx, int base) {
+Int stoi_w(const Str& str, Nat* idx, int base) {
   try {
     return std::stoi(str, idx, base);
   }
 
   catch (const std::invalid_argument& ia) {
-    error("error: ", ia.what(), ": invalid argument: for the value ", str);
+    error(ERR_STR, ia.what(), ": invalid argument: for the value: ", str);
     return -1;
   }
 
   catch (const std::out_of_range& oor) {
-    error("error: ", oor.what(), ": out of range: for the value ", str);
+    error(ERR_STR, oor.what(), ": out of range: for the value: ", str);
     return -2;
   }
 
   catch (const std::exception& e) {
-    error("error: ", e.what(), ": undefined error");
+    error(ERR_STR, e.what(), ": undefined error");
+    return -3;
+  }
+}
+
+// std::stoll() wrapper.
+int64_t stoll_w(const Str& str, Nat* idx, int base) {
+  try {
+    return std::stoll(str, idx, base);
+  }
+
+  catch (const std::invalid_argument& ia) {
+    error(ERR_STR, ia.what(), ": invalid argument: for the value: ", str);
+    return -1;
+  }
+
+  catch (const std::out_of_range& oor) {
+    error(ERR_STR, oor.what(), ": out of range: for the value: ", str);
+    return -2;
+  }
+
+  catch (const std::exception& e) {
+    error(ERR_STR, e.what(), ": undefined error");
     return -3;
   }
 }
 
 // std::stof() wrapper.
-int stof_w(const std::string& str, std::size_t* idx) {
+Float stof_w(const Str& str, Nat* idx) {
   try {
     return std::stof(str, idx);
   }
 
   catch (const std::invalid_argument& ia) {
-    error("error: ", ia.what(), ": invalid argument: for the value ", str);
-    return -1;
+    error(ERR_STR, ia.what(), ": invalid argument: for the value: ", str);
+    return -1.0;
   }
 
   catch (const std::out_of_range& oor) {
-    error("error: ", oor.what(), ": out of range: for the value ", str);
-    return -2;
+    error(ERR_STR, oor.what(), ": out of range: for the value: ", str);
+    return -2.0;
   }
 
   catch (const std::exception& e) {
-    error("error: ", e.what(), ": undefined error");
-    return -3;
+    error(ERR_STR, e.what(), ": undefined error");
+    return -3.0;
   }
 }
 
-std::string err_getline(std::string id, size_t line_num, size_t col_num) {
-  col_num -= id.size()+1;
+Str err_getline(Str id, Nat line_num, Nat col_num) {
+  Str s, line;
+  Str line_num_str = STR(line_num);
+  Nat id_len       = 1;
 
-  std::string line_num_str = std::to_string(line_num);
+  ISStream iss(bytecode);
+  for (Nat i=0; i < line_num && std::getline(iss, line); ++i)
+    ;;
+  ISStream().swap(iss);
 
-  std::string s, line;
+  if (id.size())
+    id_len = id.size();
+  if (col_num < id_len + 1)
+    col_num = 0;
+  else
+    col_num -= id_len + 1;
 
-  std::istringstream iss(bytecode);
-  for (uint i=0; i < line_num && std::getline(iss, line); i++)
-    ;
-
-  s = "\n   " + line_num_str + " | " + line + "\n   " +
-      std::string(line_num_str.size(), ' ') + " | " + std::string(col_num, ' ')
-      + "^" + std::string(id.size()-1, '~');
+  s = "\n   " + line_num_str + " | " + line + "\n   "
+    + Str(line_num_str.size(), ' ') + " | " + Str(col_num, ' ')
+    + "^" + Str(id_len-1, '~');
   return s;
 }
 
-std::string pp_spaces(std::string s, uint lim) {
-  if (s.length() < lim)
-    return std::string(lim-s.length(), ' ');
-  return std::string(" ");
-}
-
-std::string usage(char **argv) {
-  std::string usage;
+Str usage(char** argv) {
+  Str usage;
   usage += "usage: ";
   usage += *argv;
   usage +=
@@ -99,10 +119,10 @@ std::string usage(char **argv) {
   return usage;
 }
 
-void parse_opts(int argc, char **argv,
-                std::vector<std::string>& files,
-                std::vector<std::string>& out_fnames,
-                std::vector<std::string>& struct_names) {
+void parse_opts(int argc, char** argv,
+                Vector<Str>& files,
+                Vector<Str>& out_fnames,
+                Vector<Str>& struct_names) {
   if (argc < 2)
     error(usage(argv));
 
@@ -119,54 +139,53 @@ void parse_opts(int argc, char **argv,
     const int opt = getopt_long(argc, argv, "Oc:mo:h", long_opts, nullptr);
     if (opt == -1)
       break;
-    switch (opt) {
+    MATCH (opt) {
       case 'O':
         optimize = 1;
-        break;
+      END
       case 'c':
         struct_names.push_back(optarg);
-        break;
+      END
       case 'm':
         cmacro = 1;
-        break;
+      END
       case 'o':
         out_fnames.push_back(optarg);
-        break;
+      END
       case '?':
         error("unrecognized option: ", optarg);
-        break;
+      END
       case 'h':
-      default:
+      _
         error(usage(argv));
-        break;
     }
   }
 
   if (optind == argc)
     error(usage(argv));
 
-  auto ends_with = [](std::string const& str, std::string const& suffix) {
+  auto ends_with = [](Str const& str, Str const& suffix) {
     if (suffix.size() > str.size())
       return false;
     return std::equal(suffix.rbegin(), suffix.rend(), str.rbegin());
   };
 
-  for (int i=optind; i<argc; i++) {
+  for (int i=optind; i<argc; ++i) {
     if (strlen(argv[i]) < 3)
-      error("error: the file name is too short: ", argv[i]);
+      error(ERR_STR "the file name is too short: ", argv[i]);
     else if (!ends_with(argv[i], ".s"))
-      error("error: unrecognized file extension for `", argv[i],
+      error(ERR_STR "unrecognized file extension for `", argv[i],
             "` expected a file extension of format `.s`");
     files.push_back(argv[i]);
   }
 
   if (cmacro && struct_names.size())
-    error("error: -c and -m cannot be set simultaneously");
+    error(ERR_STR "-c and -m cannot be set simultaneously");
 
   if (out_fnames.size() && out_fnames.size() != files.size())
-    error(usage(argv), "\n\nerror: the amount of -o <arg> provided must be"
+    error(usage(argv), "\n\n" ERR_STR "the amount of -o <arg> provided must be"
           " equal to the amount of <sources> provided");
   else if (struct_names.size() && struct_names.size() != files.size())
-    error(usage(argv), "\n\nerror: the amount of -c <arg> provided must be"
+    error(usage(argv), "\n\n" ERR_STR "the amount of -c <arg> provided must be"
           " equal to the amount of <sources> provided");
 }
