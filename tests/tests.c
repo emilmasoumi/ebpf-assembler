@@ -11,9 +11,13 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <math.h>
 
 #include "../headers/bpf_insn.h"
 #include "tests.h"
+
+#define CRED "\x1B[1;31m"
+#define CNRM "\x1B[0m"
 
 int err(char* fmt, ...) {
   va_list args;
@@ -27,6 +31,8 @@ int err(char* fmt, ...) {
 }
 
 int delete_file(char* pname) {
+  if (access(pname, F_OK) != 0)
+    return 1;
   if (remove(pname))
     return err("remove(%s) failed: %s\n", pname, strerror(errno));
   return 1;
@@ -63,17 +69,18 @@ int assert_true(char*            pname,
   close(fd);
 
   if (size != sizeof(insns)*test_size) {
+    printf("assertion failed: object codes are of unequal sizes: %lu != %lu\n",
+           size, sizeof(insns)*test_size);
     free(prog);
-    return err("object codes are of inequal size: %lu != %lu\n",
-               size, sizeof(insns)*test_size);
+    return 0;
   }
 
   const uint8_t* const objcode = (const uint8_t*) insns;
 
-  for (size_t i=0; i<size; i++) {
+  for (size_t i=0; i<size; ++i) {
     if (objcode[i] != prog[i]) {
-      printf("%s: assertion failed: [%zu]: %hhu != %hhu\n",
-             pname, i/8, objcode[i], prog[i]);
+      printf("%s: assertion failed: insns[%zu - 1]: %hhu != %hhu\n",
+             pname, (size_t)floor((i/8)+1), objcode[i], prog[i]);
       free(prog);
       return 0;
     }
@@ -104,14 +111,14 @@ int test(char*            pname,
     if (assert_true(pname, insns, test_size))
       (*succ)++;
     else
-      printf("Test: %s failed^^^\n", pname);
+      printf("Test: %s %sfailed%s^^^\n", pname, CRED, CNRM);
     delete_file(pname);
   }
   else {
     if (assert_false(pname))
       (*succ)++;
     else {
-      printf("Test: %s failed^^^\n", pname);
+      printf("Test: %s %sfailed%s^^^\n", pname, CRED, CNRM);
       delete_file(pname);
     }
   }
@@ -155,7 +162,7 @@ int main() {
 
   char pname[64];
 
-  for (size_t i=1; i<NUM_FALSE_TESTS+1; i++) {
+  for (size_t i=1; i<NUM_FALSE_TESTS+1; ++i) {
     snprintf(pname, sizeof(pname), "./input/false/test%zu", i);
     test(pname, NULL, 0, &succ, false);
     memset(pname, 0, 64);
