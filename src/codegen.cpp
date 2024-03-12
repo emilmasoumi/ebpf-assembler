@@ -28,7 +28,7 @@ static inline __u8 reg_(Nat i, Nat j) {
     case r10: return BPF_REG_10; END
     _
       pp_ast();
-      error("reg_(): unknown register: ", pp_reg(r),
+      error(ERR_STR "reg_(): unknown register: ", pp_reg(r),
             "\nat: [", i, ", ", j,"]", "\ncategorical variable: ", r);
       return 1;
     END
@@ -51,14 +51,14 @@ static inline Str reg_str(Nat i, Nat j) {
     case r10: return "BPF_REG_10"; END
     _
       pp_ast();
-      error("reg_str(): unknown register: ", pp_reg(r),
+      error(ERR_STR "reg_str(): unknown register: ", pp_reg(r),
             "\nat: [", i, ", ", j,"]", "\ncategorical variable: ", r);
       return "";
     END
   }
 }
 
-static inline Int val(Nat i, Nat j) {
+static inline Int32 val(Nat i, Nat j) {
   return imm(i, j).val;
 }
 
@@ -926,12 +926,12 @@ void codegen(Str out_fname) {
     }
   }
 
-  int fd = open(out_fname.c_str(),
+  Int fd = open(out_fname.c_str(),
                 O_CREAT | O_WRONLY | O_TRUNC, S_IREAD | S_IWUSR);
   if (fd == -1)
-    error("open() failed on `", out_fname, "`: ", strerror(errno));
+    error(ERR_STR "open() failed on `", out_fname, "`: ", strerror(errno));
   if(write(fd, prog, insns * sizeof(struct bpf_insn)) == -1)
-    error("write() failed on `", out_fname, "`: ", strerror(errno));
+    error(ERR_STR "write() failed on `", out_fname, "`: ", strerror(errno));
   close(fd);
 }
 
@@ -1944,7 +1944,7 @@ void codegen_str(Str out_fname, Str struct_name) {
   OFStream ofs;
   ofs.open(out_fname);
   if (!ofs.is_open())
-    error("error: std::ofstream::open() failed opening file: `", out_fname,
+    error(ERR_STR "std::ofstream::open() failed opening file: `", out_fname,
           "`: ", strerror(errno));
   ofs<<c_code;
   ofs.close();

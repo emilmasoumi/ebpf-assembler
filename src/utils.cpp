@@ -12,7 +12,7 @@ void error() {
 }
 
 // std::stoi() wrapper.
-Int stoi_w(const Str& str, Nat* idx, int base) {
+Int stoi_w(const Str& str, Nat* idx, Int base) {
   try {
     return std::stoi(str, idx, base);
   }
@@ -34,7 +34,7 @@ Int stoi_w(const Str& str, Nat* idx, int base) {
 }
 
 // std::stoll() wrapper.
-int64_t stoll_w(const Str& str, Nat* idx, int base) {
+Int64 stoll_w(const Str& str, Nat* idx, Int base) {
   try {
     return std::stoll(str, idx, base);
   }
@@ -89,10 +89,8 @@ Str err_getline(Str id, Nat line_num, Nat col_num) {
 
   if (id.size())
     id_len = id.size();
-  if (col_num < id_len + 1)
-    col_num = 0;
-  else
-    col_num -= id_len + 1;
+
+  (col_num < id_len + 1 ? col_num = 0 : col_num -= id_len + 1);
 
   s = "\n   " + line_num_str + " | " + line + "\n   "
     + Str(line_num_str.size(), ' ') + " | " + Str(col_num, ' ')
@@ -153,8 +151,6 @@ void parse_opts(int argc, char** argv,
         out_fnames.push_back(optarg);
       END
       case '?':
-        error("unrecognized option: ", optarg);
-      END
       case 'h':
       _
         error(usage(argv));

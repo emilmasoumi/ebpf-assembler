@@ -155,11 +155,7 @@ static inline void label() {
         pp_stat(), " : ", pp_type(type()));
 
 static inline void imm() {
-  Int v;
-  if (is_hex(tok))
-    v = stoi_w(tok, 0, 16);
-  else
-    v = stoi_w(tok);
+  Int32 v = is_hex(tok) ? stoi_w(tok, 0, 16) : stoi_w(tok);
   VALID_OP_PASS(immediates);
   for (Nat i = 0; i < OPERANDS; ++i)
     if (optype(i) == Empty) {
@@ -205,7 +201,7 @@ static inline Lab lookup_label(Id id, Pos p) {
     if (type(i) == Label && !strcmp(id, lab(i).lname))
       return lab(i);
   error(p.line, ":", p.col, ": " ERR_STR "undefined identifier: `", id,
-        "` in this scope");
+        "` in this scope", err_getline(id, p.line, p.col));
   return Lab{};
 }
 

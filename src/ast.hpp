@@ -422,8 +422,8 @@ struct Pos {
 };
 
 struct Imm {
-  Int val;
-  Pos pos;
+  Int32 val;
+  Pos   pos;
 };
 
 struct Reg {

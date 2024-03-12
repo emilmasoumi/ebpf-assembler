@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   parse_opts(argc, argv, filenames, out_filenames, struct_names);
 
   Str filename, out_filename, struct_name;
-  uint files = filenames.size();
+  Nat files = filenames.size();
 
   for(Nat i=0; i<files; ++i) {
     filename = filenames[i];
@@ -25,7 +25,8 @@ int main(int argc, char **argv) {
       out_filename = filename.substr(0, filename.size()-2);
 
     if (access(filename.c_str(), F_OK) != 0)
-      error(ERR_STR "file `", filename, "` cannot be accessed: ", strerror(errno));
+      error(ERR_STR "file `", filename, "` cannot be accessed: ",
+            strerror(errno));
 
     IFStream ifs(filename);
     SStream ss;

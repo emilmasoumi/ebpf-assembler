@@ -9,10 +9,12 @@
 #define CRED "\x1B[1;31m"
 #define CNRM "\x1B[0m"
 
+#define ERR_STR CRED "error" CNRM ": "
+
 #define MATCH switch
-#define CASE case
-#define END  break;
-#define _    default:
+#define CASE  case
+#define END   break;
+#define _     default:
 
 #define U(...) union {__VA_ARGS__}
 
@@ -24,8 +26,6 @@
 #define IO  std::cout
 #define STR std::to_string
 
-#define ERR_STR CRED "error" CNRM ": "
-
 typedef std::stringstream  SStream;
 typedef std::istringstream ISStream;
 typedef std::ifstream      IFStream;
@@ -35,7 +35,9 @@ template <typename T>
 using Vector = std::vector<T>;
 
 typedef float       Float;
-typedef int32_t     Int;
+typedef int         Int;
+typedef int32_t     Int32;
+typedef int64_t     Int64;
 typedef const char* Id;
 typedef std::string Str;
 typedef size_t      Nat;
@@ -52,9 +54,9 @@ void error(T0 v0, Tn... vn) {
   error(vn...);
 }
 
-Int     stoi_w( const Str& str, Nat* idx = 0, int base = 10);
-int64_t stoll_w(const Str& str, Nat* idx = 0, int base = 10);
-Float   stof_w( const Str& str, Nat* idx = 0);
+Int   stoi_w( const Str& str, Nat* idx = 0, Int base = 10);
+Int64 stoll_w(const Str& str, Nat* idx = 0, Int base = 10);
+Float stof_w( const Str& str, Nat* idx = 0);
 
 Str err_getline(Str, Nat, Nat);
 
