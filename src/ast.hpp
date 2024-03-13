@@ -369,47 +369,47 @@ typedef enum {
   exit_,
 
   /* jeq32 dst imm off */
-  /* jeq32  dst src off */
+  /* jeq32 dst src off */
   jeq32,
 
   /* jgt32 dst imm off */
-  /* jgt32  dst src off */
+  /* jgt32 dst src off */
   jgt32,
 
   /* jge32 dst imm off */
-  /* jge32  dst src off */
+  /* jge32 dst src off */
   jge32,
 
   /* jlt32 dst imm off */
-  /* jlt32  dst src off */
+  /* jlt32 dst src off */
   jlt32,
 
   /* jle32 dst imm off */
-  /* jle32  dst src off */
+  /* jle32 dst src off */
   jle32,
 
   /* jset32 dst imm off */
-  /* jset32  dst src off */
+  /* jset32 dst src off */
   jset32,
 
   /* jne32 dst imm off */
-  /* jne32  dst src off */
+  /* jne32 dst src off */
   jne32,
 
   /* jsgt32 dst imm off */
-  /* jsgt32  dst src off */
+  /* jsgt32 dst src off */
   jsgt32,
 
   /* jsge32 dst imm off */
-  /* jsge32  dst src off */
+  /* jsge32 dst src off */
   jsge32,
 
   /* jslt32 dst imm off */
-  /* jslt32  dst src off */
+  /* jslt32 dst src off */
   jslt32,
 
   /* jsle32 dst imm off */
-  /* jsle32  dst src off */
+  /* jsle32 dst src off */
   jsle32,
 
   /* zext dst */

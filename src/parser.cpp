@@ -7,7 +7,7 @@
 Id symbols = "- + / * > < = | & % ( ) { } , . : ; # \' \"";
 
 #define ERROR(...) \
-  (error(line, ":", col, ": " ERR_STR, __VA_ARGS__, err_getline(tok, line, col)))
+  (error(line, ":", col, ": " ERR_STR, __VA_ARGS__, highlight(tok, line, col)))
 
 const char* expr;
 Str tok;
@@ -201,7 +201,7 @@ static inline Lab lookup_label(Id id, Pos p) {
     if (type(i) == Label && !strcmp(id, lab(i).lname))
       return lab(i);
   error(p.line, ":", p.col, ": " ERR_STR "undefined identifier: `", id,
-        "` in this scope", err_getline(id, p.line, p.col));
+        "` in this scope", highlight(id, p.line, p.col));
   return Lab{};
 }
 

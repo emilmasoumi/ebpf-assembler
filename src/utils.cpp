@@ -77,7 +77,7 @@ Float stof_w(const Str& str, Nat* idx) {
   }
 }
 
-Str err_getline(Str id, Nat line_num, Nat col_num) {
+Str highlight(Str id, Nat line_num, Nat col_num) {
   Str s, line;
   Str line_num_str = STR(line_num);
   Nat id_len       = 1;

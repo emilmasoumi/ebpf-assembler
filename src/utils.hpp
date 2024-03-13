@@ -58,7 +58,7 @@ Int   stoi_w( const Str& str, Nat* idx = 0, Int base = 10);
 Int64 stoll_w(const Str& str, Nat* idx = 0, Int base = 10);
 Float stof_w( const Str& str, Nat* idx = 0);
 
-Str err_getline(Str, Nat, Nat);
+Str highlight(Str, Nat, Nat);
 
 void parse_opts(int, char**, Vector<Str>&, Vector<Str>&, Vector<Str>&);
 
