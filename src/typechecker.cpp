@@ -26,8 +26,8 @@ Op ops(Nat i, Nat j) {
 void unexpected(Nat i, Nat j, Id ty) {
   Str line;
   auto [p, val, ins] = ops(i, j);
-  (optype(i, j) == Empty ? line = highlight(ins, p.line, p.col)
-                         : line = highlight(val, p.line, p.col));
+  line = (optype(i, j) == Empty ? highlight(ins, p.line, p.col)
+                                : highlight(val, p.line, p.col));
   ERROR(p, "unexpected operand `", val, "` passed to `", ins,
         "`. Expected an operand of type: ", ty, line);
 }
@@ -36,7 +36,7 @@ void unexpected(Nat i, Nat j) {
   auto [p, val, _ins] = ops(i, j);
   Type ty             = optype(i, j);
   ERROR(p, "expected an instruction or label definition here, but instead got "
-  "`", val, "` of type `", pp_type(ty), "`", highlight(val, p.line, p.col));
+        "`", val, "` of type `", pp_type(ty), "`", highlight(val, p.line, p.col));
 }
 
 void rest(Nat n, Nat j) {
