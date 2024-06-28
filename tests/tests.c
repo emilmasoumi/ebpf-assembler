@@ -148,6 +148,8 @@ int main() {
   test("./input/true/test18",  test18,  TEST18_SIZE,  &succ, true);
   test("./input/true/test19",  test19,  TEST19_SIZE,  &succ, true);
   test("./input/true/test20",  test20,  TEST20_SIZE,  &succ, true);
+  test("./input/true/test21",  test21,  TEST21_SIZE,  &succ, true);
+  test("./input/true/test22",  test22,  TEST22_SIZE,  &succ, true);
   test("./input/true/test100", test100, TEST100_SIZE, &succ, true);
   test("./input/true/test101", test101, TEST101_SIZE, &succ, true);
   test("./input/true/test102", test102, TEST102_SIZE, &succ, true);
