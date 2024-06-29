@@ -12,10 +12,10 @@ Id symbols = "- + / * > < = | & % ( ) { } , . : ; # \' \"";
 const char* expr;
 Str tok;
 
-Nat offset = 1, col = 1, line = 1;
+Nat offset = 0, col = 1, line = 1;
 
 static inline void check_off() {
-  if (offset <= 1)
+  if (offset < 1)
     error(line, ":", col, ": " ERR_STR "expected at least one instruction");
   else if (offset > MAX_INSNS)
     ERROR("instruction limit [", MAX_INSNS, "] exceeded: [", offset, "]");
@@ -127,6 +127,8 @@ static inline void instruction(Str id = tok) {
       PUSH(Stat{.ins = Ins{.ins = i, .pos = Pos {line, col}},
                 .ty  = Instruction});
       ++offset;
+      if (i == ld64 || i == ldmapfd)
+        ++offset;
       return;
     }
 }
@@ -208,16 +210,19 @@ static inline Lab lookup_label(Id id, Pos p) {
 static inline void deduce() {
   Ref var;
   Lab lab;
-  for (Nat i = 0; i < ASIZE; ++i) {
+  for (Nat i = 0, pc = 0; i < ASIZE; ++i) {
     if (type(i) != Instruction)
       continue;
+    ++pc;
+    if (isa(i) == ld64 || isa(i) == ldmapfd)
+      ++pc;
     for (Nat j = 0; j < OPERANDS; ++j) {
       if (optype(j, i) == Reference) {
         var = ref(j, i);
         lab = lookup_label(var.id, var.pos);
         delete[] var.id;
         optype(j, i) = Immediate;
-        imm(j, i)    = {(Int)lab.off, var.pos};
+        imm(j, i)    = {(Int)lab.off-(Int)pc, var.pos};
       }
     }
   }
