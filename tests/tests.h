@@ -1,4 +1,4 @@
-#define NUM_TRUE_TESTS  32
+#define NUM_TRUE_TESTS  33
 #define NUM_FALSE_TESTS 21
 #define NUM_TESTS NUM_TRUE_TESTS + NUM_FALSE_TESTS
 
@@ -170,6 +170,21 @@ static struct bpf_insn test21[TEST21_SIZE] = {
 static struct bpf_insn test22[TEST22_SIZE] = {
   BPF_JMP_A(-1),
   BPF_JMP_A(0),
+};
+
+#define TEST23_SIZE 18
+static struct bpf_insn test23[TEST23_SIZE] = {
+  BPF_JMP_A(4),
+  BPF_LD_IMM64(BPF_REG_0, 1),
+  BPF_LD_IMM64(BPF_REG_0, 2),
+  BPF_LD_IMM64(BPF_REG_0, 3),
+  BPF_LD_IMM64(BPF_REG_0, 4),
+  BPF_JMP_A(-5),
+  BPF_LD_MAP_FD(BPF_REG_0, 5),
+  BPF_JMP_A(-3),
+  BPF_JMP_A(2),
+  BPF_LD_MAP_FD(BPF_REG_0, 6),
+  BPF_LD_MAP_FD(BPF_REG_0, 7),
 };
 
 #define TEST100_SIZE 25

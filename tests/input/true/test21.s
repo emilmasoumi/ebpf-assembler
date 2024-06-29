@@ -7,7 +7,7 @@ start:
 loop:
   sub r1 1
   add32 r2 1
-  jle r1 r2 loop  ; loop = |loop..PC| = -2 ; PC += -2 = 8 - 2 = 6
+  jle r1 r2 loop  ; loop = |loop..PC| - c = -2 - 1 ; PC += -3 = 8 - 3 = 5
 end:
   mov r0 0
   exit
